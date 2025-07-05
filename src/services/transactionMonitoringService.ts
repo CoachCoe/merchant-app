@@ -232,6 +232,7 @@ export class TransactionMonitoringService {
       42161: Network.ARB_MAINNET,    // Arbitrum
       10: Network.OPT_MAINNET,       // Optimism
       137: Network.MATIC_MAINNET     // Polygon
+      // Moonriver (1285), Shiden (336), and Bifrost (2030) are not supported by Alchemy SDK
     };
     
     return networkMap[chainId] || null;

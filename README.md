@@ -1,6 +1,6 @@
 # NFC Payment Terminal
 
-A multi-chain NFC payment terminal that processes cryptocurrency payments across 5 blockchain networks with real-time transaction monitoring and comprehensive history tracking.
+A multi-chain NFC payment terminal that processes cryptocurrency payments across 7 blockchain networks with real-time transaction monitoring and comprehensive history tracking.
 
 ## 🌐 Supported Networks
 
@@ -8,7 +8,9 @@ A multi-chain NFC payment terminal that processes cryptocurrency payments across
 - **Base** 
 - **Arbitrum** 
 - **Optimism** 
-- **Polygon** 
+- **Polygon**
+- **Moonriver (Kusama)**
+- **Shiden (Kusama)**
 
 ### 🎯 **Smart Payment Priority**
 
@@ -17,6 +19,8 @@ Rather than negotiate a chain / token combo with the merchant, the payment termi
 ```
 L2 Stablecoin > L2 Other > L2 ETH > L1 Stablecoin > L1 Other > L1 ETH
 ```
+
+**Note:** Kusama parachains (Moonriver, Shiden) are treated as L2 networks for payment priority, supporting their native tokens (MOVR, SDN) and ERC-20 tokens.
 
 ## 🚀 Quick Start
 
@@ -77,7 +81,7 @@ scripts/
 ## 🔄 Payment Flow
 
 1. **NFC Detection** → Customer taps device
-2. **Multi-Chain Fetching** → Portfolio analysis across all 6 chains
+2. **Multi-Chain Fetching** → Portfolio analysis across all 7 chains
 3. **Smart Selection** → Optimal payment token based on priority system
 4. **EIP-681 Generation** → Payment request with chain ID
 5. **Real-Time Monitoring** → WebSocket/polling for transaction confirmation
@@ -85,7 +89,7 @@ scripts/
 
 ## 🛡️ Transaction Monitoring
 
-- **WebSocket monitoring** for Ethereum, Base, Arbitrum, Optimism, Polygon
+- **WebSocket monitoring** for Ethereum, Base, Arbitrum, Optimism, Polygon, Moonriver, Shiden
 - **Polling-based monitoring** fallback
 - **Automatic timeout** after 5 minutes
 - **Block explorer integration** for transaction verification

@@ -439,6 +439,91 @@ const initiatePaymentHandler: AsyncRequestHandler = async (req, res) => {
 // HTTP endpoint to initiate payment
 expressApp.post('/initiate-payment', initiatePaymentHandler);
 
+// HTTP endpoint to generate QR code immediately (no NFC required)
+const generateQRCodeHandler: AsyncRequestHandler = async (req, res) => {
+    try {
+        const { amount, merchantAddress } = req.body;
+        
+        if (!amount || amount <= 0) {
+            return res.status(400).json({ success: false, message: 'Invalid amount' });
+        }
+
+        if (!merchantAddress) {
+            return res.status(400).json({ success: false, message: 'Merchant address is required' });
+        }
+        
+        // Accept both Ethereum (0x...) and Substrate (5..., C..., E..., etc.) format addresses
+        const isValidEthereumAddress = AlchemyService.isEthereumAddress(merchantAddress);
+        // Substrate addresses can be 32-48 characters and contain base58 characters
+        const isValidSubstrateAddress = /^[1-9A-HJ-NP-Za-km-z]{32,48}$/.test(merchantAddress);
+        
+        if (!isValidEthereumAddress && !isValidSubstrateAddress) {
+            return res.status(400).json({ success: false, message: 'Invalid merchant address format' });
+        }
+
+        console.log(`🔗 Generating QR code for $${amount.toFixed(2)} payment`);
+        
+        // Generate a Kusama payment QR code for KSM
+        const qrData = {
+            amount: amount,
+            tokenSymbol: 'KSM',
+            chainId: 2, // Kusama relay chain
+            recipientAddress: merchantAddress,
+            tokenAddress: null // Native KSM
+        };
+        
+        // Generate Kusama payment URI (Substrate format)
+        // For Kusama native payments, we use a simple format that wallets can parse
+        let uri: string;
+        if (qrData.recipientAddress.startsWith('0x')) {
+            // EVM format address - use ethereum: URI
+            uri = `ethereum:${qrData.recipientAddress}@${qrData.chainId}?value=${qrData.amount}`;
+        } else {
+            // Substrate format address - use plain address format that Nova wallet can read
+            uri = qrData.recipientAddress;
+        }
+        
+        // Generate QR code
+        const QRCode = (await import('qrcode')).default;
+        const qrCodeDataURL = await QRCode.toDataURL(uri, {
+            width: 300,
+            margin: 2,
+            color: {
+                dark: '#E6007A', // Kusama pink
+                light: '#FFFFFF'
+            }
+        });
+        
+        const qrCodeData = {
+            uri: uri,
+            qrCodeDataURL: qrCodeDataURL,
+            amount: qrData.amount,
+            tokenSymbol: qrData.tokenSymbol,
+            chainId: qrData.chainId,
+            recipientAddress: qrData.recipientAddress,
+        };
+        
+        console.log(`✅ QR code generated for ${qrData.tokenSymbol} payment`);
+        console.log(`🔗 URI: ${uri}`);
+        
+        // Broadcast QR code to frontend
+        broadcast({
+            type: 'payment_qr',
+            data: qrCodeData,
+            message: 'Scan this QR code with your wallet app to pay.'
+        });
+        
+        res.json({ success: true, qrCode: qrCodeData });
+        
+    } catch (error: any) {
+        console.error('Error generating QR code:', error);
+        const errorMessage = error.message || 'Failed to generate QR code';
+        res.status(500).json({ success: false, message: errorMessage });
+    }
+};
+
+expressApp.post('/generate-qr', generateQRCodeHandler);
+
 // Endpoint to get transaction history
 expressApp.get('/transaction-history', (req, res) => {
     res.json(transactionHistory);

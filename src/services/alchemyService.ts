@@ -70,7 +70,10 @@ export class AlchemyService {
       42161: 'https://arbiscan.io/tx/',            // Arbitrum
       10: 'https://optimistic.etherscan.io/tx/',   // Optimism
       137: 'https://polygonscan.com/tx/',          // Polygon
-      393402133025423: 'https://starkscan.co/tx/' // Starknet
+      393402133025423: 'https://starkscan.co/tx/', // Starknet
+      1285: 'https://moonriver.moonscan.io/tx/',   // Moonriver (Kusama)
+      336: 'https://shiden.subscan.io/extrinsic/', // Shiden (Kusama)
+      2030: 'https://bifrost.subscan.io/extrinsic/' // Bifrost (Kusama)
     };
     
     const baseUrl = explorerMap[chainId];
@@ -88,6 +91,7 @@ export class AlchemyService {
       10: Network.OPT_MAINNET,       // Optimism
       137: Network.MATIC_MAINNET     // Polygon
       // Note: Starknet (393402133025423) uses different API patterns and doesn't support WebSocket subscriptions
+      // Moonriver (1285), Shiden (336), and Bifrost (2030) are not supported by Alchemy SDK
     };
     
     return networkMap[chainId] || null;

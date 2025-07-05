@@ -108,6 +108,58 @@ export const SUPPORTED_CHAINS: ChainConfig[] = [
       decimals: 18
     },
     coingeckoId: 'ethereum'
+  },
+  {
+    id: 1285,
+    name: 'moonriver',
+    displayName: 'Moonriver (Kusama)',
+    alchemyNetwork: 'moonriver-mainnet',
+    alchemyUrl: `https://rpc.api.moonriver.moonbeam.network`, // Public RPC endpoint
+    nativeToken: {
+      symbol: 'MOVR',
+      name: 'Moonriver',
+      decimals: 18
+    },
+    coingeckoId: 'moonriver'
+  },
+  {
+    id: 336,
+    name: 'shiden',
+    displayName: 'Shiden (Kusama)',
+    alchemyNetwork: 'shiden-mainnet',
+    alchemyUrl: `https://rpc.shiden.astar.network`, // Public RPC endpoint
+    nativeToken: {
+      symbol: 'SDN',
+      name: 'Shiden',
+      decimals: 18
+    },
+    coingeckoId: 'shiden'
+  },
+  {
+    id: 2,
+    name: 'kusama',
+    displayName: 'Kusama Relay Chain',
+    alchemyNetwork: 'kusama-mainnet',
+    alchemyUrl: `https://kusama-rpc.polkadot.io`, // Public RPC endpoint
+    nativeToken: {
+      symbol: 'KSM',
+      name: 'Kusama',
+      decimals: 12
+    },
+    coingeckoId: 'kusama'
+  },
+  {
+    id: 0,
+    name: 'polkadot',
+    displayName: 'Polkadot Relay Chain',
+    alchemyNetwork: 'polkadot-mainnet',
+    alchemyUrl: `https://polkadot-rpc.polkadot.io`, // Public RPC endpoint
+    nativeToken: {
+      symbol: 'DOT',
+      name: 'Polkadot',
+      decimals: 10
+    },
+    coingeckoId: 'polkadot'
   }
 ];
 

@@ -609,7 +609,10 @@ export class RealtimeTransactionMonitor {
       8453: 'base-mainnet',   // Base
       42161: 'arb-mainnet',   // Arbitrum
       10: 'opt-mainnet',      // Optimism
-      137: 'polygon-mainnet'  // Polygon
+      137: 'polygon-mainnet', // Polygon
+      1285: 'moonriver-mainnet', // Moonriver (Kusama)
+      336: 'shiden-mainnet',  // Shiden (Kusama)
+      2030: 'bifrost-mainnet' // Bifrost (Kusama)
     };
     
     const network = networkMap[chainId];
@@ -631,6 +634,7 @@ export class RealtimeTransactionMonitor {
       42161: Network.ARB_MAINNET,
       10: Network.OPT_MAINNET,
       137: Network.MATIC_MAINNET
+      // Moonriver (1285), Shiden (336), and Bifrost (2030) are not supported by Alchemy SDK
     };
     
     return networkMap[chainId] || null;

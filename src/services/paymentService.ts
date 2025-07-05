@@ -2,6 +2,8 @@ import { Reader } from 'nfc-pcsc';
 import { PAYMENT, RECIPIENT_ADDRESS, SUPPORTED_CHAINS } from '../config/index.js';
 import { TokenWithPrice } from '../types/index.js';
 import { EthereumService } from './ethereumService.js';
+import { QRCodeService } from './qrCodeService.js';
+import { broadcast } from '../server.js';
 
 /**
  * Service for handling payment requests and EIP-681 URI generation
@@ -162,7 +164,7 @@ export class PaymentService {
     
     // Group by priority categories for better display
     const L1_CHAINS = [1]; // Ethereum mainnet
-    const L2_CHAINS = [8453, 42161, 10, 137, 393402133025423]; // Base, Arbitrum, Optimism, Polygon, Starknet
+    const L2_CHAINS = [8453, 42161, 10, 137, 393402133025423, 1285, 336, 2, 0]; // Base, Arbitrum, Optimism, Polygon, Starknet, Moonriver, Shiden, Kusama, Polkadot
     
     const isStablecoin = (token: TokenWithPrice): boolean => {
       return /^(USDC|USDT|DAI|BUSD|FRAX|LUSD|USDCE|USDC\.E|USDT\.E|DAI\.E)$/i.test(token.symbol);
@@ -245,6 +247,26 @@ export class PaymentService {
     const nfcTransmissionTime = Date.now() - nfcTransmissionStart;
     console.log(`⏱️ [PROFILE] NFC payment request transmission completed in ${nfcTransmissionTime}ms`);
     
+    // --- QR CODE PAYMENT SUPPORT ---
+    // Generate EIP-681 URI for QR code
+    const eip681Uri = this.generateEIP681Uri(requiredAmount, selectedToken.address, selectedToken.chainId);
+    // Generate QR code (as Data URL)
+    const qrCodeDataURL = await QRCodeService.generateEIP681QRCode(eip681Uri);
+    // Broadcast QR code for Apple/fallback users
+    broadcast({
+      type: 'payment_qr',
+      data: {
+        uri: eip681Uri,
+        qrCodeDataURL,
+        amount: Number(requiredAmount) / Math.pow(10, selectedToken.decimals),
+        tokenSymbol: selectedToken.symbol,
+        chainId: selectedToken.chainId,
+        recipientAddress: RECIPIENT_ADDRESS,
+      },
+      message: 'Scan this QR code with your wallet app to pay.'
+    });
+    // --- END QR CODE PAYMENT SUPPORT ---
+    
     console.log(`✅ Payment request sent for exactly ${requiredAmount.toString()} smallest units`);
     console.log(`📱 Customer will be asked to pay ${displayAmount} ${selectedToken.symbol}`);
     
@@ -267,7 +289,7 @@ export class PaymentService {
   private static selectBestPaymentToken(viableTokens: TokenWithPrice[]): TokenWithPrice {
     // Define L1 and L2 chains
     const L1_CHAINS = [1]; // Ethereum mainnet
-    const L2_CHAINS = [8453, 42161, 10, 137, 393402133025423]; // Base, Arbitrum, Optimism, Polygon, Starknet
+    const L2_CHAINS = [8453, 42161, 10, 137, 393402133025423, 1285, 336, 2, 0]; // Base, Arbitrum, Optimism, Polygon, Starknet, Moonriver, Shiden, Kusama, Polkadot
     
     // Helper function to check if token is a stablecoin
     const isStablecoin = (token: TokenWithPrice): boolean => {

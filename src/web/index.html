@@ -183,6 +183,121 @@
             100% { opacity: 1; }
         }
 
+        /* QR Code Screen */
+        .qr-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .qr-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            max-width: 500px;
+            margin-bottom: 30px;
+        }
+
+        .qr-header h2 {
+            font-size: 2rem;
+            margin: 0;
+        }
+
+        .qr-content {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 500px;
+            width: 100%;
+            color: #333;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .qr-code-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .qr-code-image {
+            width: 250px;
+            height: 250px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .payment-details {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .payment-amount {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #28a745;
+            margin-bottom: 10px;
+        }
+
+        .payment-token {
+            font-size: 1.2rem;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .payment-chain {
+            font-size: 1rem;
+            color: #888;
+        }
+
+        .qr-instructions {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .qr-instructions p {
+            margin: 10px 0;
+            font-size: 1rem;
+            color: #555;
+        }
+        
+        .manual-confirmation {
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .confirm-payment-button {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        }
+        
+        .confirm-payment-button:hover {
+            background: linear-gradient(135deg, #45a049, #4CAF50);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+        }
+
         /* NFC Status Screen */
         .nfc-screen {
             position: fixed;
@@ -490,7 +605,7 @@
             border: none;
             border-radius: 15px;
             padding: 20px 40px;
-            font-size: 4rem;
+            font-size: 2.5rem;
             font-weight: 700;
             cursor: pointer;
             margin-top: 30px;
@@ -569,6 +684,41 @@
         <div class="nfc-amount" id="successAmount">$0.00</div>
         <div class="nfc-submessage">Transaction completed successfully</div>
         <button class="retry-button" onclick="newTransaction()">New Transaction</button>
+    </div>
+
+    <!-- QR Code Payment Screen -->
+    <div class="qr-screen" id="qrScreen" style="display: none;">
+        <div class="qr-header">
+            <h2>📱 Scan QR Code to Pay</h2>
+            <button class="close-button" onclick="closeQRCode()">✕</button>
+        </div>
+        
+        <div class="qr-content">
+            <div class="qr-code-container">
+                <img id="qrCodeImage" src="" alt="Payment QR Code" class="qr-code-image">
+            </div>
+            
+            <div class="payment-details">
+                <div class="payment-amount" id="qrPaymentAmount">$0.00</div>
+                <div class="payment-token" id="qrPaymentToken">Token</div>
+                <div class="payment-chain" id="qrPaymentChain">Chain</div>
+            </div>
+            
+            <div class="qr-instructions">
+                <p>📱 Open your wallet app (Talisman, MetaMask, etc.)</p>
+                <p>🔍 Scan this QR code to complete payment</p>
+                <p>✅ Payment will be confirmed automatically</p>
+                <p>💡 <strong>Note:</strong> For Kusama payments, you may need to manually confirm below</p>
+            </div>
+            
+            <div class="manual-confirmation">
+                <button class="confirm-payment-button" onclick="confirmPaymentManually()">
+                    ✅ Payment Completed - Close Screen
+                </button>
+            </div>
+        </div>
+        
+        <button class="cancel-button" onclick="closeQRCode()">Cancel Payment</button>
     </div>
 
     <!-- Transaction History Screen -->
@@ -658,6 +808,9 @@
                         if (data.transaction) {
                             addTransactionToHistory(data.transaction);
                         }
+                        break;
+                    case 'payment_qr':
+                        showQRCode(data.data);
                         break;
                 }
             };
@@ -790,6 +943,67 @@
             }, 5000);
         }
 
+        function showQRCode(qrData) {
+            console.log('Showing QR code:', qrData);
+            
+            const qrScreen = document.getElementById('qrScreen');
+            const qrCodeImage = document.getElementById('qrCodeImage');
+            const qrPaymentAmount = document.getElementById('qrPaymentAmount');
+            const qrPaymentToken = document.getElementById('qrPaymentToken');
+            const qrPaymentChain = document.getElementById('qrPaymentChain');
+            
+            // Set QR code image
+            qrCodeImage.src = qrData.qrCodeDataURL;
+            
+            // Set payment details
+            qrPaymentAmount.textContent = `$${qrData.amount.toFixed(2)}`;
+            qrPaymentToken.textContent = qrData.tokenSymbol;
+            qrPaymentChain.textContent = `Chain ID: ${qrData.chainId}`;
+            
+            // Show QR screen
+            qrScreen.style.display = 'flex';
+            
+            // Hide NFC screen if it's showing
+            document.getElementById('nfcScreen').style.display = 'none';
+        }
+
+        function closeQRCode() {
+            document.getElementById('qrScreen').style.display = 'none';
+            resetUI();
+        }
+
+        function confirmPaymentManually() {
+            console.log('Payment manually confirmed by user');
+            
+            // Close QR code screen
+            document.getElementById('qrScreen').style.display = 'none';
+            
+            // Show success message
+            const nfcScreen = document.getElementById('nfcScreen');
+            const nfcMessage = nfcScreen.querySelector('.nfc-message');
+            const nfcSubmessage = nfcScreen.querySelector('.nfc-submessage');
+            const spinner = nfcScreen.querySelector('.spinner');
+            const checkmark = nfcScreen.querySelector('.checkmark');
+            const cancelButton = nfcScreen.querySelector('.cancel-button');
+            const nfcAmount = nfcScreen.querySelector('.nfc-amount');
+            
+            nfcScreen.style.display = 'flex';
+            nfcScreen.classList.add('payment-approved');
+            nfcScreen.classList.remove('waiting-payment', 'error');
+            
+            nfcMessage.textContent = 'Payment Approved';
+            nfcSubmessage.textContent = 'Transaction completed successfully';
+            nfcAmount.style.display = 'block';
+            spinner.style.display = 'none';
+            checkmark.style.display = 'block';
+            cancelButton.style.display = 'none';
+            
+            // Reset after 3 seconds
+            setTimeout(() => {
+                resetUI();
+            }, 3000);
+        }
+
         function resetUI() {
             const nfcScreen = document.getElementById('nfcScreen');
             const nfcAmount = document.getElementById('nfcAmount');
@@ -809,6 +1023,12 @@
             
             // Reset processing state
             isProcessing = false;
+            
+            // Reset amount to 0
+            currentCents = 0;
+            currentAmount = 0;
+            updateDisplay();
+            
             updateDoneButton();
         }
 
@@ -897,10 +1117,11 @@
 
         async function initiateNFCPayment(amount) {
             try {
-                // Use a default merchant address - in production, this would come from settings
-                const merchantAddress = '0xaD66946538E4B03B1910DadE713feBb8B59Cff60';
+                // Use your Kusama relay chain address for merchant payments
+                const merchantAddress = 'EUfWfTP84xqpnd8GUpUAGWrvP7M6cHNJ2QT37RRYyEbWpei';
                 
-                const response = await fetch('/initiate-payment', {
+                // Call the new QR code generation endpoint instead of NFC payment
+                const response = await fetch('/generate-qr', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -913,15 +1134,19 @@
 
                 if (!response.ok) {
                     const errorData = await response.json();
-                    throw new Error(errorData.message || errorData.error || 'Failed to start payment');
+                    throw new Error(errorData.message || errorData.error || 'Failed to generate QR code');
                 }
 
                 const result = await response.json();
-                console.log('Payment initiated:', result);
+                console.log('QR code generated:', result);
+                
+                // The QR code will be displayed via WebSocket broadcast
                 
             } catch (error) {
-                console.error('Payment initiation failed:', error);
-                showError(error.message || 'Payment failed to start');
+                console.error('QR code generation failed:', error);
+                showError(error.message || 'Failed to generate QR code');
+                isProcessing = false;
+                updateDoneButton();
             }
         }
 

@@ -17,18 +17,14 @@ interface MonitoringSubscription {
   chainConfig: ChainConfig;
 }
 
-/**
  * Service for interacting with Alchemy API to fetch wallet balances across multiple chains
  * and monitor transactions in real-time using WebSocket subscriptions
- */
 export class AlchemyService {
   private static alchemyInstances: Map<number, Alchemy> = new Map();
   private static isInitialized = false;
   private static activeSubscriptions: Map<string, MonitoringSubscription> = new Map();
 
-  /**
    * Initialize Alchemy instances for all supported chains
-   */
   static initialize() {
     if (this.isInitialized) return;
 
@@ -37,7 +33,6 @@ export class AlchemyService {
     }
 
     try {
-      // Initialize Alchemy instances for all supported chains
       SUPPORTED_CHAINS.forEach(chain => {
         const networkMapping = this.getAlchemyNetwork(chain.id);
         if (networkMapping) {
@@ -60,9 +55,7 @@ export class AlchemyService {
     }
   }
 
-  /**
    * Generate block explorer URL for a transaction hash on the given chain
-   */
   private static getBlockExplorerUrl(chainId: number, txHash: string): string {
     const explorerMap: {[key: number]: string} = {
       1: 'https://etherscan.io/tx/',               // Ethereum
@@ -80,9 +73,7 @@ export class AlchemyService {
     return baseUrl ? `${baseUrl}${txHash}` : `https://etherscan.io/tx/${txHash}`;
   }
 
-  /**
    * Map chain IDs to Alchemy Network enums
-   */
   private static getAlchemyNetwork(chainId: number): Network | null {
     const networkMap: {[key: number]: Network} = {
       1: Network.ETH_MAINNET,        // Ethereum
@@ -90,16 +81,12 @@ export class AlchemyService {
       42161: Network.ARB_MAINNET,    // Arbitrum
       10: Network.OPT_MAINNET,       // Optimism
       137: Network.MATIC_MAINNET     // Polygon
-      // Note: Starknet (393402133025423) uses different API patterns and doesn't support WebSocket subscriptions
-      // Moonriver (1285), Shiden (336), and Bifrost (2030) are not supported by Alchemy SDK
     };
     
     return networkMap[chainId] || null;
   }
 
-  /**
    * Get chain configuration by chain ID
-   */
   private static getChainConfig(chainId: number): ChainConfig | null {
     return SUPPORTED_CHAINS.find(chain => chain.id === chainId) || null;
   }
@@ -108,9 +95,7 @@ export class AlchemyService {
     return /^0x[a-fA-F0-9]{40}$/.test(address);
   }
 
-  /**
    * Fetch all balances across all supported chains in parallel
-   */
   static async fetchMultiChainBalances(address: string): Promise<MultiChainPortfolio> {
     const startTime = Date.now();
     console.log(`⏱️ [PROFILE] Starting fetchMultiChainBalances for ${address}`);
@@ -120,7 +105,6 @@ export class AlchemyService {
     try {
       console.log(`\n🔄 Fetching balances for ${address} across ${SUPPORTED_CHAINS.length} chains...`);
 
-      // Fetch balances for all chains in parallel
       const chainBalancePromises = SUPPORTED_CHAINS.map(chain => 
         this.fetchChainBalances(address, chain)
       );
@@ -129,7 +113,6 @@ export class AlchemyService {
       const fetchTime = Date.now() - startTime;
       console.log(`⏱️ [PROFILE] Chain balance fetching completed in ${fetchTime}ms`);
 
-      // Aggregate results
       const portfolio: MultiChainPortfolio = {
         address,
         chains: chainBalances,
@@ -137,7 +120,6 @@ export class AlchemyService {
         allTokens: chainBalances.flatMap(chain => chain.tokens)
       };
 
-      // Display summary
       this.displayPortfolioSummary(portfolio);
 
       const totalTime = Date.now() - startTime;
@@ -156,16 +138,13 @@ export class AlchemyService {
     }
   }
 
-  /**
    * Fetch balances for a single chain
-   */
   private static async fetchChainBalances(address: string, chain: ChainConfig): Promise<ChainBalances> {
     const startTime = Date.now();
     
     try {
       console.log(`⛓️  Fetching ${chain.displayName} balances...`);
 
-      // Fetch native token and ERC-20 token balances in parallel
       const [nativeBalance, tokenBalances] = await Promise.all([
         this.fetchNativeBalance(address, chain),
         this.fetchTokenBalances(address, chain)
@@ -173,12 +152,10 @@ export class AlchemyService {
 
       const tokens: TokenWithPrice[] = [];
 
-      // Add native token if has balance
       if (nativeBalance && nativeBalance.balance > 0) {
         tokens.push(nativeBalance);
       }
 
-      // Add ERC-20 tokens
       tokens.push(...tokenBalances);
 
       const totalValueUSD = tokens.reduce((sum, token) => sum + token.valueUSD, 0);
@@ -206,9 +183,7 @@ export class AlchemyService {
     }
   }
 
-  /**
    * Fetch native token balance for a chain
-   */
   private static async fetchNativeBalance(address: string, chain: ChainConfig): Promise<TokenWithPrice | null> {
     try {
       const response = await fetch(chain.alchemyUrl, {
@@ -232,7 +207,6 @@ export class AlchemyService {
       const balance = parseInt(data.result, 16) / Math.pow(10, chain.nativeToken.decimals);
       if (balance <= 0) return null;
 
-      // Get native token price
       const ethPrice = await PriceService.getEthPrice();
       const valueUSD = balance * ethPrice;
 
@@ -256,9 +230,7 @@ export class AlchemyService {
     }
   }
 
-  /**
    * Fetch ERC-20 token balances for a chain
-   */
   private static async fetchTokenBalances(address: string, chain: ChainConfig): Promise<TokenWithPrice[]> {
     try {
       const response = await fetch(chain.alchemyUrl, {
@@ -302,17 +274,13 @@ export class AlchemyService {
     }
   }
 
-  /**
    * Process token balances with metadata and prices
-   */
   private static async processTokenBalances(nonZeroBalances: AlchemyTokenBalance[], chain: ChainConfig): Promise<TokenWithPrice[]> {
     try {
       const tokenAddresses = nonZeroBalances.map((token) => token.contractAddress);
       
-      // Fetch prices first
       const tokenPrices = await PriceService.getTokenPricesForChain(tokenAddresses, chain.name);
       
-      // Fetch metadata for each token individually (alchemy_getTokenMetadata doesn't support batching)
       const metadataPromises = tokenAddresses.map(async (address, index) => {
         try {
           const response = await fetch(chain.alchemyUrl, {
@@ -341,7 +309,6 @@ export class AlchemyService {
       
       const metadataResults = await Promise.all(metadataPromises);
       
-      // Create metadata lookup map
       const metadataMap: {[address: string]: any} = {};
       metadataResults.forEach(result => {
         metadataMap[result.address] = result.metadata;
@@ -354,7 +321,6 @@ export class AlchemyService {
           const balance = parseInt(token.tokenBalance, 16);
           const contractAddress = token.contractAddress.toLowerCase();
           
-          // Get metadata with fallback values
           const metadata = metadataMap[contractAddress];
           let decimals: number;
           let symbol: string;
@@ -365,7 +331,6 @@ export class AlchemyService {
             symbol = metadata.symbol || 'UNKNOWN';
             name = metadata.name || 'Unknown Token';
           } else {
-            // Fallback values when metadata is unavailable
             decimals = this.getFallbackDecimals(contractAddress, chain.id);
             symbol = this.getFallbackSymbol(contractAddress, chain.id);
             name = this.getFallbackName(contractAddress, chain.id);
@@ -405,9 +370,7 @@ export class AlchemyService {
     }
   }
 
-  /**
    * Get fallback decimals for known tokens when metadata service fails
-   */
   private static getFallbackDecimals(contractAddress: string, chainId: number): number {
     const knownTokens: {[key: string]: {[address: string]: number}} = {
       '8453': { // Base
@@ -428,9 +391,7 @@ export class AlchemyService {
     return knownTokens[chainId.toString()]?.[contractAddress] || 18;
   }
 
-  /**
    * Get fallback symbol for known tokens when metadata service fails
-   */
   private static getFallbackSymbol(contractAddress: string, chainId: number): string {
     const knownTokens: {[key: string]: {[address: string]: string}} = {
       '8453': { // Base
@@ -451,9 +412,7 @@ export class AlchemyService {
     return knownTokens[chainId.toString()]?.[contractAddress] || `TOKEN_${contractAddress.slice(0, 6)}`;
   }
 
-  /**
    * Get fallback name for known tokens when metadata service fails
-   */
   private static getFallbackName(contractAddress: string, chainId: number): string {
     const knownTokens: {[key: string]: {[address: string]: string}} = {
       '8453': { // Base
@@ -474,9 +433,7 @@ export class AlchemyService {
     return knownTokens[chainId.toString()]?.[contractAddress] || `Unknown Token`;
   }
 
-  /**
    * Display portfolio summary
-   */
   private static displayPortfolioSummary(portfolio: MultiChainPortfolio): void {
     console.log('\n=== 🌐 MULTI-CHAIN PORTFOLIO ===');
     console.log(`💼 Total Value: $${portfolio.totalValueUSD.toFixed(2)}\n`);
@@ -496,7 +453,6 @@ export class AlchemyService {
       }
     });
 
-    // Show tokens sorted by value
     const topTokens = portfolio.allTokens
       .filter(token => token.priceUSD > 0)
       .sort((a, b) => b.valueUSD - a.valueUSD)
@@ -511,17 +467,13 @@ export class AlchemyService {
     }
   }
 
-  /**
    * Legacy single-chain method for backward compatibility
-   */
   static async fetchBalances(address: string): Promise<TokenWithPrice[]> {
     const portfolio = await this.fetchMultiChainBalances(address);
     return portfolio.allTokens;
   }
 
-  /**
    * Monitor transactions to a specific address for both ETH and ERC-20 token transfers using Alchemy's Asset Transfer API
-   */
   static async monitorTransactions(
     merchantAddress: string,
     callback: (tx: Transaction & { tokenSymbol?: string, tokenAddress?: string, decimals?: number }) => void,
@@ -546,7 +498,6 @@ export class AlchemyService {
     let isMonitoring = true;
     let lastCheckedBlock = 0;
 
-    // Get the latest block number to start monitoring from
     try {
       const latestBlock = await alchemy.core.getBlockNumber();
       lastCheckedBlock = latestBlock;
@@ -555,18 +506,15 @@ export class AlchemyService {
       console.error(`Error getting latest block:`, error);
     }
 
-    // Polling function to check for new transfers
     const pollForTransfers = async () => {
       if (!isMonitoring) return;
 
       try {
         const currentBlock = await alchemy.core.getBlockNumber();
         
-        // Use a conservative approach - stay 2 blocks behind to avoid "past head" errors
         const safeToBlock = Math.max(currentBlock - 1, lastCheckedBlock);
         
         if (safeToBlock > lastCheckedBlock) {
-          // Get asset transfers to the merchant address since the last checked block
           const transfers = await alchemy.core.getAssetTransfers({
             toAddress: merchantAddress,
             fromBlock: `0x${lastCheckedBlock.toString(16)}`,
@@ -588,32 +536,27 @@ export class AlchemyService {
                 blockNum: transfer.blockNum
               });
 
-              // Skip if no hash
               if (!transfer.hash) {
                 continue;
               }
 
-              // Determine token details
               let tokenSymbol = transfer.asset || chainConfig.nativeToken.symbol;
               let tokenAddress = transfer.rawContract?.address || '0x0000000000000000000000000000000000000000';
               let decimals = typeof transfer.rawContract?.decimal === 'string' 
                 ? parseInt(transfer.rawContract.decimal) 
                 : (transfer.rawContract?.decimal || 18);
               
-              // For ETH transfers, use chain's native token info
               if (transfer.category === AssetTransfersCategory.EXTERNAL) {
                 tokenSymbol = chainConfig.nativeToken.symbol;
                 tokenAddress = '0x0000000000000000000000000000000000000000';
                 decimals = chainConfig.nativeToken.decimals;
               }
 
-              // Parse the transfer value
               const transferValue = parseFloat(transfer.value?.toString() || '0');
               
               if (transferValue > 0) {
                 console.log(`✅ ${tokenSymbol} transfer confirmed on ${chainConfig.displayName}: ${transferValue} ${tokenSymbol}`);
 
-                // Convert to wei/smallest unit for consistency with existing code
                 const valueInSmallestUnits = Math.floor(transferValue * Math.pow(10, decimals));
 
                 callback({
@@ -634,37 +577,30 @@ export class AlchemyService {
           lastCheckedBlock = safeToBlock;
         }
       } catch (error) {
-        // Handle specific "past head" errors more gracefully
         if (error instanceof Error && error.message.includes('toBlock is past head')) {
-          // This is a timing issue - just wait for the next poll cycle
           console.log(`⏳ Blockchain sync delay on ${chainConfig.displayName}, retrying next cycle...`);
         } else {
           console.error(`Error polling for transfers on ${chainConfig.displayName}:`, error);
         }
       }
 
-      // Continue polling if still monitoring
       if (isMonitoring) {
         setTimeout(pollForTransfers, 3000); // Poll every 3 seconds
       }
     };
 
-    // Start polling
     pollForTransfers();
 
     console.log(`✅ Asset transfer monitoring started for ${chainConfig.displayName}`);
     console.log('🎯 Ready to detect ETH and ERC-20 token transfers...');
     
-    // Return unsubscribe function
     return () => {
       console.log(`🔌 Stopping asset transfer monitoring on ${chainConfig.displayName}`);
       isMonitoring = false;
     };
   }
 
-  /**
    * Monitor transactions across multiple chains simultaneously
-   */
   static async monitorMultiChainTransactions(
     address: string,
     callback: (tx: Transaction & { chainId: number, chainName: string }) => void,
@@ -679,7 +615,6 @@ export class AlchemyService {
 
     const unsubscribeFunctions: (() => void)[] = [];
 
-    // Set up monitoring for each chain
     for (const chainId of chainIds) {
       try {
         const chainConfig = this.getChainConfig(chainId);
@@ -691,7 +626,6 @@ export class AlchemyService {
         const unsubscribe = await this.monitorTransactions(
           address,
           (tx) => {
-            // Enhanced callback with chain information
             callback({
               ...tx,
               chainId,
@@ -710,23 +644,18 @@ export class AlchemyService {
 
     console.log(`✅ Multi-chain monitoring active on ${unsubscribeFunctions.length} chains`);
 
-    // Return function to unsubscribe from all chains
     return () => {
       console.log('🔌 Unsubscribing from all multi-chain monitoring');
       unsubscribeFunctions.forEach(unsubscribe => unsubscribe());
     };
   }
 
-  /**
    * Get all active subscriptions
-   */
   static getActiveSubscriptions(): string[] {
     return Array.from(this.activeSubscriptions.keys());
   }
 
-  /**
    * Cleanup all active subscriptions
-   */
   static cleanup(): void {
     console.log(`🧹 Cleaning up ${this.activeSubscriptions.size} active subscriptions`);
     this.activeSubscriptions.forEach((subscription, key) => {
@@ -740,9 +669,7 @@ export class AlchemyService {
     this.activeSubscriptions.clear();
   }
 
-  /**
    * Special polling-based monitoring for Starknet since WebSockets aren't supported
-   */
   private static async startStarknetPolling(
     merchantAddress: string,
     minimumValue: number,
@@ -754,7 +681,6 @@ export class AlchemyService {
       
       const pollingInterval = setInterval(async () => {
         try {
-          // Use direct HTTP API call to Starknet
           const response = await fetch(chainConfig.alchemyUrl, {
             method: 'POST',
             headers: {
@@ -771,7 +697,6 @@ export class AlchemyService {
           const data = await response.json();
           
           if (data.result && data.result.transactions) {
-            // Check transactions for payments to our address
             for (const tx of data.result.transactions) {
               if (tx.to === merchantAddress && tx.value) {
                 const valueInWei = parseInt(tx.value, 16);
@@ -805,7 +730,6 @@ export class AlchemyService {
         }
       }, 5000); // Poll every 5 seconds
 
-      // Timeout after 5 minutes
       setTimeout(() => {
         clearInterval(pollingInterval);
         reject(new Error('Starknet polling timeout'));
@@ -813,10 +737,8 @@ export class AlchemyService {
     });
   }
 
-  /**
    * Start monitoring transactions to a specific address on the given chain
    * Returns a promise that resolves when a matching transaction is found
-   */
   static async startMonitoring(
     merchantAddress: string,
     minimumValue: number,
@@ -825,13 +747,11 @@ export class AlchemyService {
     onTransaction?: (transaction: Transaction) => void
   ): Promise<Transaction> {
     try {
-      // Find the chain config
       const chainConfig = SUPPORTED_CHAINS.find(chain => chain.id === chainId);
       if (!chainConfig) {
         throw new Error(`Chain ${chainName} (ID: ${chainId}) is not supported`);
       }
 
-      // Special handling for Starknet which doesn't support WebSocket subscriptions
       if (chainId === 393402133025423) { // Starknet chain ID
         console.log(`⚠️  Starknet monitoring will use polling instead of WebSockets (WebSocket subscriptions not available for Starknet)`);
         return AlchemyService.startStarknetPolling(merchantAddress, minimumValue, chainConfig, onTransaction);
@@ -846,7 +766,6 @@ export class AlchemyService {
       console.log(`📡 Monitoring address: ${merchantAddress}`);
       console.log(`💰 Minimum value: ${minimumValue} wei`);
 
-      // Create Alchemy instance for this chain
       const settings = {
         apiKey: config.ALCHEMY_API_KEY,
         network: network,
@@ -855,7 +774,6 @@ export class AlchemyService {
 
       return new Promise<Transaction>((resolve, reject) => {
         try {
-          // Subscribe to mined transactions for the specific address
           const subscription = alchemy.ws.on({
             method: AlchemySubscription.MINED_TRANSACTIONS,
             addresses: [{ to: merchantAddress }]
@@ -886,7 +804,6 @@ export class AlchemyService {
                   to: tx.to
                 };
 
-                // Store the subscription for cleanup
                 const monitoringSubscription: MonitoringSubscription = {
                   alchemy,
                   subscription,
@@ -907,7 +824,6 @@ export class AlchemyService {
             }
           });
 
-          // Store the subscription for cleanup
           const monitoringSubscription: MonitoringSubscription = {
             alchemy,
             subscription,

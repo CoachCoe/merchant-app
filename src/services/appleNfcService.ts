@@ -6,10 +6,8 @@ import { AlchemyService } from './alchemyService.js';
 import { PaymentService } from './paymentService.js';
 import { broadcast } from '../server.js';
 
-/**
  * Service for handling Apple device NFC integration
  * Uses a hybrid approach: NFC for wallet address + QR codes for payment requests
- */
 export class AppleNfcService {
   private nfc: NFC;
   private paymentArmed: boolean = false;
@@ -25,10 +23,8 @@ export class AppleNfcService {
     this.setupNFC();
   }
 
-  /**
    * Setup NFC readers for Apple device compatibility
    * Apple devices can only read NFC tags, so we use a different approach
-   */
   private setupNFC(): void {
     console.log('🍎 Setting up Apple-compatible NFC service');
     this.nfc.on('reader', (reader: Reader) => {
@@ -38,13 +34,10 @@ export class AppleNfcService {
     });
   }
 
-  /**
    * Setup event handlers for Apple NFC compatibility
-   */
   private setupAppleReaderEvents(reader: Reader): void {
     console.log('🔧 Setting up Apple NFC event handlers');
 
-    // Apple devices can read NFC tags, so we'll use a different approach
     (reader as any).on('card', async (card: CardData) => {
       console.log('📱 Apple device detected');
       await this.handleAppleDevice(reader, card);
@@ -61,10 +54,8 @@ export class AppleNfcService {
     });
   }
 
-  /**
    * Handle Apple device detection
    * Apple devices can only read NFC tags, so we use a different approach
-   */
   private async handleAppleDevice(reader: Reader, card: CardData): Promise<void> {
     console.log('🍎 Apple device detected:', {
       type: card.type,
@@ -78,8 +69,6 @@ export class AppleNfcService {
     }
 
     try {
-      // For Apple devices, we'll use a different approach
-      // Instead of sending APDU commands, we'll generate QR codes
       if (this.walletScanArmed) {
         await this.processAppleWalletScan();
       } else if (this.paymentArmed && this.currentPaymentAmount !== null) {
@@ -94,14 +83,10 @@ export class AppleNfcService {
     }
   }
 
-  /**
    * Process Apple wallet scan - generate QR code for wallet address
-   */
   private async processAppleWalletScan(): Promise<void> {
     console.log('📱 Processing Apple wallet scan');
     
-    // For Apple devices, we'll generate a QR code that the user can scan
-    // This QR code will contain instructions for the user to open their wallet app
     const qrData = {
       type: 'wallet_scan',
       message: 'Please open your wallet app and scan this QR code to share your address',
@@ -124,14 +109,10 @@ export class AppleNfcService {
     }
   }
 
-  /**
    * Process Apple payment request - generate QR code with EIP-681 URI
-   */
   private async processApplePaymentRequest(): Promise<void> {
     console.log('💳 Processing Apple payment request');
     
-    // For Apple devices, we'll generate a QR code with the EIP-681 payment URI
-    // The user can scan this with their wallet app
     const paymentUri = this.generateApplePaymentUri();
     
     const qrData = {
@@ -160,18 +141,12 @@ export class AppleNfcService {
     }
   }
 
-  /**
    * Generate EIP-681 payment URI for Apple devices
-   */
   private generateApplePaymentUri(): string {
-    // This would be generated based on the selected payment token
-    // For now, we'll return a placeholder
     return 'ethereum:0xRecipient@1?value=1000000000000000000';
   }
 
-  /**
    * Arm the reader for Apple payment
-   */
   public async armForApplePaymentAndAwaitTap(amount: number): Promise<{ success: boolean; message: string; errorType?: string; paymentInfo?: any }> {
     console.log(`🍎 Arming for Apple payment: $${amount}`);
     
@@ -183,7 +158,6 @@ export class AppleNfcService {
     return new Promise((resolve) => {
       this.cardHandlerResolve = resolve;
       
-      // Set a timeout for Apple devices
       setTimeout(() => {
         if (this.cardHandlerResolve) {
           this.cardHandlerResolve({ 
@@ -198,9 +172,7 @@ export class AppleNfcService {
     });
   }
 
-  /**
    * Scan for Apple wallet address
-   */
   public async scanForAppleWalletAddress(): Promise<{ success: boolean; message: string; address?: string; errorType?: string }> {
     console.log('📱 Scanning for Apple wallet address');
     
@@ -211,7 +183,6 @@ export class AppleNfcService {
     return new Promise((resolve) => {
       this.walletScanResolve = resolve;
       
-      // Set a timeout for Apple devices
       setTimeout(() => {
         if (this.walletScanResolve) {
           this.walletScanResolve({ 
@@ -226,26 +197,20 @@ export class AppleNfcService {
     });
   }
 
-  /**
    * Disarm payment mode
-   */
   private disarmPayment(): void {
     this.paymentArmed = false;
     this.currentPaymentAmount = null;
     console.log('🔒 Apple payment disarmed');
   }
 
-  /**
    * Disarm wallet scan mode
-   */
   private disarmWalletScan(): void {
     this.walletScanArmed = false;
     console.log('🔒 Apple wallet scan disarmed');
   }
 
-  /**
    * Cancel current operation
-   */
   public cancelCurrentOperation(): void {
     console.log('❌ Cancelling Apple operation');
     this.disarmPayment();
@@ -262,19 +227,13 @@ export class AppleNfcService {
     }
   }
 
-  /**
    * Start listening for Apple devices
-   */
   public startListening(): void {
     console.log('🍎 Starting Apple NFC listener');
-    // NFC starts automatically when readers are detected
   }
 
-  /**
    * Stop listening for Apple devices
-   */
   public stopListening(): void {
     console.log('🍎 Stopping Apple NFC listener');
-    // Add any cleanup logic here if needed
   }
 } 

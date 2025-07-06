@@ -1,16 +1,9 @@
-/**
- * Service for managing address processing state
- */
 export class AddressProcessor {
   private static processingAddresses = new Set<string>();
 
-  /**
-   * Check if an address can be processed (not already being processed)
-   */
   static canProcessAddress(address: string): boolean {
     const normalizedAddress = address.toLowerCase();
     
-    // Check if already being processed
     if (this.processingAddresses.has(normalizedAddress)) {
       console.log(`⏳ Address ${address} is already being processed, please wait...`);
       console.log(`🔍 Currently processing addresses:`, Array.from(this.processingAddresses));
@@ -20,13 +13,9 @@ export class AddressProcessor {
     return true;
   }
 
-  /**
-   * Get the specific reason why an address cannot be processed
-   */
   static getProcessingBlockReason(address: string): string | null {
     const normalizedAddress = address.toLowerCase();
-    
-    // Check if already being processed
+
     if (this.processingAddresses.has(normalizedAddress)) {
       return 'Address is already being processed';
     }
@@ -34,9 +23,7 @@ export class AddressProcessor {
     return null; // Can be processed
   }
 
-  /**
    * Mark an address as being processed
-   */
   static startProcessing(address: string): void {
     const normalizedAddress = address.toLowerCase();
     this.processingAddresses.add(normalizedAddress);
@@ -44,9 +31,7 @@ export class AddressProcessor {
     console.log(`📊 Total addresses being processed: ${this.processingAddresses.size}`);
   }
 
-  /**
    * Mark address processing as complete
-   */
   static finishProcessing(address: string): void {
     const normalizedAddress = address.toLowerCase();
     const wasProcessing = this.processingAddresses.has(normalizedAddress);
@@ -56,9 +41,7 @@ export class AddressProcessor {
     console.log(`📱 Ready for next tap\n`);
   }
 
-  /**
    * Clear all processing states (emergency cleanup)
-   */
   static clearAllProcessing(): void {
     const addressCount = this.processingAddresses.size;
     if (addressCount > 0) {
@@ -70,9 +53,7 @@ export class AddressProcessor {
     }
   }
 
-  /**
    * Debug method to show current state
-   */
   static debugState(): void {
     console.log(`📊 AddressProcessor Debug State:`);
     console.log(`   Processing addresses (${this.processingAddresses.size}):`, Array.from(this.processingAddresses));

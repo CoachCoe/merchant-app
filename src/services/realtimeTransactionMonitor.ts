@@ -33,9 +33,7 @@ export class RealtimeTransactionMonitor {
   private static fallbackInterval: NodeJS.Timeout | null = null;
   private static readonly FALLBACK_POLLING_INTERVAL = 5000; // 5 seconds as fallback
 
-  /**
    * Start real-time monitoring for a specific payment using WebSockets
-   */
   static async startMonitoring(
     tokenAddress: string,
     expectedAmount: bigint,
@@ -56,7 +54,6 @@ export class RealtimeTransactionMonitor {
     console.log(`🏠 Recipient: ${RECIPIENT_ADDRESS}`);
     console.log(`📄 Token contract: ${tokenAddress}`);
 
-    // Store the monitoring session
     this.currentSession = {
       recipientAddress: RECIPIENT_ADDRESS,
       expectedAmount,
@@ -70,7 +67,6 @@ export class RealtimeTransactionMonitor {
       onError: errorCallback
     };
 
-    // Try to establish WebSocket connection first
     try {
       await this.connectWebSocket(chainId);
       console.log(`✅ Real-time monitoring started via WebSocket`);
@@ -80,9 +76,7 @@ export class RealtimeTransactionMonitor {
     }
   }
 
-  /**
    * Establish WebSocket connection to Alchemy
-   */
   private static async connectWebSocket(chainId: number): Promise<void> {
     const wsUrl = this.getAlchemyWebSocketUrl(chainId);
     if (!wsUrl) {
@@ -99,10 +93,8 @@ export class RealtimeTransactionMonitor {
         console.log(`🔌 [WS DEBUG] Connection state: ${this.wsConnection?.readyState} (1=OPEN)`);
         this.reconnectAttempts = 0;
         
-        // Subscribe to pending transactions to our recipient address
         this.subscribeToPendingTransactions();
         
-        // Also subscribe to new blocks as a backup
         this.subscribeToNewBlocks();
         
         resolve();
@@ -135,7 +127,6 @@ export class RealtimeTransactionMonitor {
         console.log(`🔌 [WS DEBUG] Reconnect attempts: ${this.reconnectAttempts}/${this.MAX_RECONNECT_ATTEMPTS}`);
         this.wsConnection = null;
         
-        // Only attempt reconnection if we have an active session
         if (this.currentSession && this.reconnectAttempts < this.MAX_RECONNECT_ATTEMPTS) {
           console.log(`🔄 [WS DEBUG] Scheduling reconnection in ${this.RECONNECT_DELAY}ms`);
           setTimeout(() => {
@@ -154,7 +145,6 @@ export class RealtimeTransactionMonitor {
         }
       });
 
-      // Set connection timeout
       setTimeout(() => {
         if (this.wsConnection?.readyState !== WebSocket.OPEN) {
           console.error(`⏰ [WS DEBUG] WebSocket connection timeout after 10 seconds`);
@@ -166,16 +156,13 @@ export class RealtimeTransactionMonitor {
     });
   }
 
-  /**
    * Subscribe to pending transactions filtered by recipient address
-   */
   private static subscribeToPendingTransactions(): void {
     if (!this.wsConnection || !this.currentSession) {
       console.error(`❌ [WS DEBUG] Cannot subscribe - wsConnection: ${!!this.wsConnection}, currentSession: ${!!this.currentSession}`);
       return;
     }
 
-    // First subscription: alchemy_pendingTransactions (mainly for ETH transfers)
     const pendingTxSubscription = {
       jsonrpc: "2.0",
       id: 1,
@@ -196,14 +183,10 @@ export class RealtimeTransactionMonitor {
       console.error(`❌ [WS DEBUG] Failed to send pending transaction subscription:`, error);
     }
 
-    // For ERC-20 tokens, we'll rely on checking blocks when they arrive
-    // because ERC-20 transfers have the token contract as 'to' address, not the recipient
     console.log(`📡 [WS DEBUG] Note: ERC-20 transfers will be detected when new blocks arrive`);
   }
 
-  /**
    * Subscribe to new blocks for confirmation monitoring
-   */
   private static subscribeToNewBlocks(): void {
     if (!this.wsConnection) {
       console.error(`❌ [WS DEBUG] Cannot subscribe to new blocks - no WebSocket connection`);
@@ -228,9 +211,7 @@ export class RealtimeTransactionMonitor {
     }
   }
 
-  /**
    * Handle incoming WebSocket messages
-   */
   private static handleWebSocketMessage(message: any): void {
     console.log(`🔍 [WS DEBUG] Processing WebSocket message - type: ${message.method || 'response'}`);
     
@@ -239,11 +220,9 @@ export class RealtimeTransactionMonitor {
       return;
     }
 
-    // Handle subscription confirmations
     if (message.id && message.result) {
       console.log(`✅ [WS DEBUG] Subscription confirmed for ID ${message.id}: ${message.result}`);
       
-      // Log what this subscription is for
       if (message.id === 1) {
         console.log(`✅ [WS DEBUG] Pending transactions subscription active`);
       } else if (message.id === 2) {
@@ -252,13 +231,11 @@ export class RealtimeTransactionMonitor {
       return;
     }
 
-    // Handle subscription errors
     if (message.id && message.error) {
       console.error(`❌ [WS DEBUG] Subscription error for ID ${message.id}:`, message.error);
       return;
     }
 
-    // Handle pending transaction notifications
     if (message.method === "alchemy_pendingTransactions" && message.params?.result) {
       const tx: PendingTransaction = message.params.result;
       console.log(`📥 [WS DEBUG] PENDING TRANSACTION DETECTED: ${tx.hash}`);
@@ -276,18 +253,15 @@ export class RealtimeTransactionMonitor {
       return;
     }
 
-    // Handle new block notifications - check for transfers in the new block
     if (message.method === "eth_subscription" && message.params?.result?.number) {
       const blockNumber = parseInt(message.params.result.number, 16);
       console.log(`🧱 [WS DEBUG] New block: ${blockNumber}`);
       console.log(`🧱 [WS DEBUG] Checking for transfers in block ${blockNumber}`);
       
-      // Check for transfers in this new block
       this.checkBlockForTransfers(blockNumber);
       return;
     }
 
-    // Handle unrecognized messages
     console.warn(`⚠️ [WS DEBUG] Unrecognized message format:`, {
       method: message.method,
       hasId: !!message.id,
@@ -297,9 +271,7 @@ export class RealtimeTransactionMonitor {
     });
   }
 
-  /**
    * Check a specific block for transfers to our merchant address
-   */
   private static async checkBlockForTransfers(blockNumber: number): Promise<void> {
     if (!this.currentSession) {
       console.log(`❌ [WS DEBUG] No active session for block checking`);
@@ -312,14 +284,12 @@ export class RealtimeTransactionMonitor {
       return;
     }
 
-    // Add a delay to let the block be fully processed
     console.log(`⏳ [WS DEBUG] Waiting 2 seconds for block ${blockNumber} to be fully processed...`);
     await new Promise(resolve => setTimeout(resolve, 2000));
 
     try {
       console.log(`🔍 [WS DEBUG] Fetching transfers in block ${blockNumber} to ${this.currentSession.recipientAddress}`);
       
-      // Use a safer approach - check from 2 blocks ago up to this block
       const safeFromBlock = Math.max(0, blockNumber - 1);
       
       const transfers = await alchemy.core.getAssetTransfers({
@@ -332,7 +302,6 @@ export class RealtimeTransactionMonitor {
 
       console.log(`🔍 [WS DEBUG] Found ${transfers.transfers.length} transfers in blocks ${safeFromBlock}-${blockNumber - 1}`);
       
-      // Process each transfer
       for (const transfer of transfers.transfers) {
         console.log(`📥 [WS DEBUG] Transfer found:`, {
           hash: transfer.hash,
@@ -347,7 +316,6 @@ export class RealtimeTransactionMonitor {
         await this.processAssetTransfer(transfer);
       }
     } catch (error: any) {
-      // If we still get "past head" error, it means we're too close to the chain tip
       if (error.message?.includes('past head')) {
         console.log(`⏳ [WS DEBUG] Block ${blockNumber} still too new, will be caught in next block`);
       } else {
@@ -356,9 +324,7 @@ export class RealtimeTransactionMonitor {
     }
   }
 
-  /**
    * Process a pending transaction to see if it matches our payment
-   */
   private static async processPendingTransaction(tx: PendingTransaction): Promise<void> {
     if (!this.currentSession) return;
 
@@ -369,7 +335,6 @@ export class RealtimeTransactionMonitor {
     console.log(`📮 To: ${tx.to}`);
     console.log(`💰 Value: ${tx.value}`);
 
-    // For ETH transfers, check value directly
     if (session.tokenAddress.toLowerCase() === session.recipientAddress.toLowerCase()) {
       const transferAmount = BigInt(tx.value || '0');
       if (this.verifyPayment(transferAmount, session.tokenAddress, tx.hash)) {
@@ -377,7 +342,6 @@ export class RealtimeTransactionMonitor {
       }
     }
 
-    // For ERC-20 transfers, decode the transaction input
     if (tx.input && tx.input.length > 10) {
       const erc20Transfer = this.decodeERC20Transfer(tx.input);
       if (erc20Transfer) {
@@ -390,28 +354,21 @@ export class RealtimeTransactionMonitor {
       }
     }
 
-    // If pending transaction doesn't match, wait for it to be mined and check via API
     console.log(`⏳ Transaction doesn't match in pending state, will verify when mined`);
     this.scheduleTransactionVerification(tx.hash);
   }
 
-  /**
    * Decode ERC-20 transfer function call from transaction input
-   */
   private static decodeERC20Transfer(input: string): { to: string; amount: bigint } | null {
     try {
-      // ERC-20 transfer function signature: 0xa9059cbb
       if (!input.startsWith('0xa9059cbb')) {
         return null;
       }
 
-      // Remove function signature (first 4 bytes / 8 hex chars)
       const data = input.slice(10);
       
-      // Extract recipient address (first 32 bytes, last 20 bytes are the address)
       const toAddress = '0x' + data.slice(24, 64);
       
-      // Extract amount (second 32 bytes)
       const amountHex = data.slice(64, 128);
       const amount = BigInt('0x' + amountHex);
 
@@ -422,9 +379,7 @@ export class RealtimeTransactionMonitor {
     }
   }
 
-  /**
    * Verify if a payment matches our expected criteria
-   */
   private static verifyPayment(amount: bigint, tokenAddress: string, txHash: string): boolean {
     if (!this.currentSession) return false;
 
@@ -455,9 +410,7 @@ export class RealtimeTransactionMonitor {
     return false;
   }
 
-  /**
    * Schedule verification of a transaction once it's mined
-   */
   private static scheduleTransactionVerification(txHash: string): void {
     setTimeout(async () => {
       if (!this.currentSession) return;
@@ -477,9 +430,7 @@ export class RealtimeTransactionMonitor {
     }, 15000); // Wait 15 seconds for transaction to be mined
   }
 
-  /**
    * Verify a mined transaction using Alchemy's asset transfers API
-   */
   private static async verifyMinedTransaction(txHash: string): Promise<void> {
     if (!this.currentSession) return;
 
@@ -503,9 +454,7 @@ export class RealtimeTransactionMonitor {
     }
   }
 
-  /**
    * Process asset transfer (similar to existing polling logic)
-   */
   private static async processAssetTransfer(transfer: AssetTransfersResult): Promise<void> {
     if (!this.currentSession) return;
 
@@ -527,9 +476,7 @@ export class RealtimeTransactionMonitor {
     }
   }
 
-  /**
    * Start fallback polling if WebSocket fails
-   */
   private static startFallbackPolling(): void {
     if (this.fallbackInterval) {
       console.log(`🔄 [WS DEBUG] Fallback polling already active`);
@@ -570,9 +517,7 @@ export class RealtimeTransactionMonitor {
     }, this.FALLBACK_POLLING_INTERVAL);
   }
 
-  /**
    * Stop all monitoring (WebSocket and fallback polling)
-   */
   static stopMonitoring(): void {
     console.log('\n🛑 [WS DEBUG] Stopping real-time payment monitoring...');
     console.log(`🛑 [WS DEBUG] Current state - WS: ${!!this.wsConnection}, Polling: ${!!this.fallbackInterval}, Session: ${!!this.currentSession}`);
@@ -595,9 +540,7 @@ export class RealtimeTransactionMonitor {
     console.log('✅ [WS DEBUG] Real-time monitoring stopped completely');
   }
 
-  /**
    * Get Alchemy WebSocket URL for a specific chain
-   */
   private static getAlchemyWebSocketUrl(chainId: number): string | null {
     if (!config.ALCHEMY_API_KEY) {
       console.error('❌ ALCHEMY_API_KEY not configured');
@@ -624,9 +567,7 @@ export class RealtimeTransactionMonitor {
     return `wss://${network}.g.alchemy.com/v2/${config.ALCHEMY_API_KEY}`;
   }
 
-  /**
    * Get Alchemy network enum for a chain ID
-   */
   private static getAlchemyNetwork(chainId: number): Network | null {
     const networkMap: {[key: number]: Network} = {
       1: Network.ETH_MAINNET,
@@ -634,15 +575,12 @@ export class RealtimeTransactionMonitor {
       42161: Network.ARB_MAINNET,
       10: Network.OPT_MAINNET,
       137: Network.MATIC_MAINNET
-      // Moonriver (1285), Shiden (336), and Bifrost (2030) are not supported by Alchemy SDK
     };
     
     return networkMap[chainId] || null;
   }
 
-  /**
    * Get or create Alchemy client for a specific chain
-   */
   private static getAlchemyClient(chainId: number): Alchemy | null {
     if (this.alchemyClients.has(chainId)) {
       return this.alchemyClients.get(chainId)!;
@@ -662,16 +600,12 @@ export class RealtimeTransactionMonitor {
     return alchemy;
   }
 
-  /**
    * Check if currently monitoring
-   */
   static isMonitoring(): boolean {
     return this.currentSession !== null;
   }
 
-  /**
    * Get current session info
-   */
   static getCurrentSession(): PaymentSession | null {
     return this.currentSession;
   }

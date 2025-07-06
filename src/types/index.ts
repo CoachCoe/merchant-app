@@ -1,4 +1,3 @@
-// Define a basic interface for the card object based on expected properties
 export interface CardData {
   type?: string; // e.g., 'TAG_ISO_14443_4'
   standard?: string; // e.g., 'TAG_ISO_14443_4'
@@ -7,7 +6,6 @@ export interface CardData {
   atr?: Buffer;
 }
 
-// Interface for token data with price information
 export interface TokenWithPrice {
   address: string;
   symbol: string;
@@ -22,7 +20,6 @@ export interface TokenWithPrice {
   isNativeToken: boolean;
 }
 
-// Interface for Alchemy responses
 export interface AlchemyTokenBalance {
   contractAddress: string;
   tokenBalance: string;
@@ -34,7 +31,6 @@ export interface AlchemyTokenMetadata {
   name: string;
 }
 
-// Multi-chain balance aggregation
 export interface ChainBalances {
   chainId: number;
   chainName: string;

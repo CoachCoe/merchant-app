@@ -1,9 +1,7 @@
 import { Alchemy } from 'alchemy-sdk';
 import { ALCHEMY_API_KEY } from '../config/index.js';
 
-/**
  * Service for caching ETH price and refreshing it periodically using Alchemy SDK
- */
 export class PriceCacheService {
   private static cachedEthPrice: number = 0;
   private static lastFetchTime: number = 0;
@@ -11,22 +9,16 @@ export class PriceCacheService {
   private static readonly REFRESH_INTERVAL_MS = 60000; // 1 minute
   private static alchemy = new Alchemy({ apiKey: ALCHEMY_API_KEY });
 
-  /**
    * Initialize the price cache service
-   */
   static async initialize(): Promise<void> {
     
-    // Fetch initial ETH price
     await this.fetchAndCacheEthPrice();
     
-    // Set up periodic refresh
     this.startPeriodicRefresh();
     
   }
 
-  /**
    * Start periodic price refresh
-   */
   private static startPeriodicRefresh(): void {
     if (this.refreshInterval) {
       clearInterval(this.refreshInterval);
@@ -37,17 +29,13 @@ export class PriceCacheService {
     }, this.REFRESH_INTERVAL_MS);
   }
 
-  /**
    * Get cached ETH price
-   */
   static getCachedEthPrice(): number {
     const ageMs = Date.now() - this.lastFetchTime;
     return this.cachedEthPrice;
   }
 
-  /**
    * Fetch ETH price and update cache
-   */
   private static async fetchAndCacheEthPrice(): Promise<void> {
     try {
       const priceData = await this.alchemy.prices.getTokenPriceBySymbol(['ETH']);
@@ -125,16 +113,12 @@ export class PriceCacheService {
     }
   }
 
-  /**
    * Get last fetch time
-   */
   static getLastFetchTime(): number {
     return this.lastFetchTime;
   }
 
-  /**
    * Clean up resources
-   */
   static cleanup(): void {
     if (this.refreshInterval) {
       clearInterval(this.refreshInterval);
@@ -143,9 +127,7 @@ export class PriceCacheService {
     }
   }
 
-  /**
    * Stop periodic refresh (for cleanup)
-   */
   static stop(): void {
     console.log(`🛑 DEBUG: Stopping price cache service...`);
     if (this.refreshInterval) {
@@ -157,16 +139,12 @@ export class PriceCacheService {
     }
   }
 
-  /**
    * Force refresh ETH price
-   */
   static async forceRefresh(): Promise<void> {
     await this.fetchAndCacheEthPrice();
   }
 
-  /**
    * Get cache status
-   */
   static getCacheStatus(): {price: number, lastFetch: Date, isStale: boolean} {
     const now = Date.now();
     const ageMs = now - this.lastFetchTime;

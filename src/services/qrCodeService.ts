@@ -1,13 +1,7 @@
 import QRCode from 'qrcode';
 
-/**
- * Service for generating QR codes for Apple device integration
- */
 export class QRCodeService {
   
-  /**
-   * Generate QR code for wallet address sharing
-   */
   static async generateWalletQRCode(address: string): Promise<string> {
     try {
       const qrData = {
@@ -34,9 +28,6 @@ export class QRCodeService {
     }
   }
 
-  /**
-   * Generate QR code for EIP-681 payment URI
-   */
   static async generatePaymentQRCode(uri: string, amount: number, tokenSymbol: string): Promise<string> {
     try {
       const qrData = {
@@ -65,9 +56,6 @@ export class QRCodeService {
     }
   }
 
-  /**
-   * Generate simple EIP-681 URI QR code (for direct wallet scanning)
-   */
   static async generateEIP681QRCode(uri: string): Promise<string> {
     try {
       const qrCodeDataURL = await QRCode.toDataURL(uri, {
@@ -86,9 +74,6 @@ export class QRCodeService {
     }
   }
 
-  /**
-   * Generate QR code for Apple Wallet integration
-   */
   static async generateAppleWalletQRCode(paymentData: {
     amount: number;
     tokenSymbol: string;
@@ -97,13 +82,10 @@ export class QRCodeService {
     tokenAddress?: string;
   }): Promise<string> {
     try {
-      // Generate EIP-681 URI
       let uri: string;
       if (paymentData.tokenAddress) {
-        // ERC-20 token payment
         uri = `ethereum:${paymentData.tokenAddress}@${paymentData.chainId}/transfer?address=${paymentData.recipientAddress}&uint256=${paymentData.amount}`;
       } else {
-        // Native token payment
         uri = `ethereum:${paymentData.recipientAddress}@${paymentData.chainId}?value=${paymentData.amount}`;
       }
       
@@ -122,7 +104,7 @@ export class QRCodeService {
         width: 350,
         margin: 3,
         color: {
-          dark: '#007AFF', // Apple blue
+          dark: '#007AFF',
           light: '#FFFFFF'
         }
       });
@@ -134,9 +116,6 @@ export class QRCodeService {
     }
   }
 
-  /**
-   * Generate QR code for manual wallet address entry
-   */
   static async generateManualEntryQRCode(): Promise<string> {
     try {
       const qrData = {

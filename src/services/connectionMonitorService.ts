@@ -13,9 +13,7 @@ export class ConnectionMonitorService {
     private static connectionStatus: ConnectionStatus = { connected: true, lastCheck: Date.now() };
     private static onStatusChange?: (status: ConnectionStatus) => void;
 
-    /**
      * Start monitoring Alchemy connection status
-     */
     static startMonitoring(onStatusChange: (status: ConnectionStatus) => void) {
         if (this.isMonitoring) return;
 
@@ -24,18 +22,14 @@ export class ConnectionMonitorService {
 
         console.log('🔍 Starting Alchemy connection monitoring...');
 
-        // Check immediately
         this.checkConnection();
 
-        // Check every 30 seconds
         this.monitorInterval = setInterval(() => {
             this.checkConnection();
         }, 30000);
     }
 
-    /**
      * Stop monitoring
-     */
     static stopMonitoring() {
         if (this.monitorInterval) {
             clearInterval(this.monitorInterval);
@@ -45,13 +39,9 @@ export class ConnectionMonitorService {
         console.log('⏹️ Stopped Alchemy connection monitoring');
     }
 
-    /**
      * Check connection status by attempting a simple API call to Alchemy
-     */
     private static async checkConnection() {
         try {
-            // Test connection by trying to validate an Ethereum address
-            // This is a simple API call that doesn't require much data
             const testAddress = '0x0000000000000000000000000000000000000000';
             const isValid = AlchemyService.isEthereumAddress(testAddress);
             
@@ -59,7 +49,6 @@ export class ConnectionMonitorService {
                 throw new Error('AlchemyService basic validation failed');
             }
 
-            // Try a simple fetch to one of the Alchemy endpoints
             const mainnetChain = SUPPORTED_CHAINS.find(chain => chain.id === 1);
             if (!mainnetChain) {
                 throw new Error('No mainnet chain configuration found');
@@ -76,7 +65,6 @@ export class ConnectionMonitorService {
                     method: 'eth_blockNumber',
                     params: []
                 }),
-                // Add timeout
                 signal: AbortSignal.timeout(10000) // 10 second timeout
             });
 
@@ -89,7 +77,6 @@ export class ConnectionMonitorService {
                 throw new Error('No result in Alchemy response');
             }
 
-            // Connection successful
             this.updateStatus(true);
 
         } catch (error) {
@@ -110,9 +97,7 @@ export class ConnectionMonitorService {
         }
     }
 
-    /**
      * Update connection status and notify if changed
-     */
     private static updateStatus(connected: boolean, errorMessage?: string) {
         const previousStatus = this.connectionStatus.connected;
         
@@ -122,7 +107,6 @@ export class ConnectionMonitorService {
             errorMessage
         };
 
-        // Notify if status changed
         if (previousStatus !== connected) {
             console.log(`🔄 Connection status changed: ${connected ? 'Connected' : 'Disconnected'}`);
             if (this.onStatusChange) {
@@ -131,16 +115,12 @@ export class ConnectionMonitorService {
         }
     }
 
-    /**
      * Get current connection status
-     */
     static getStatus(): ConnectionStatus {
         return { ...this.connectionStatus };
     }
 
-    /**
      * Force a connection check
-     */
     static async forceCheck(): Promise<ConnectionStatus> {
         await this.checkConnection();
         return this.getStatus();

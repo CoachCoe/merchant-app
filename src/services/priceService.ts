@@ -2,15 +2,11 @@ import { Alchemy, Network } from 'alchemy-sdk';
 import { ALCHEMY_API_KEY, SUPPORTED_CHAINS } from '../config/index.js';
 import { PriceCacheService } from './priceCacheService.js';
 
-/**
  * Service for fetching token prices from Alchemy Prices API using Alchemy SDK
- */
 export class PriceService {
   private static alchemy = new Alchemy({ apiKey: ALCHEMY_API_KEY });
 
-  /**
    * Map chain names to Alchemy Network enum values
-   */
   private static getAlchemyNetwork(chainName: string): Network | null {
     const networkMap: {[key: string]: Network} = {
       'ethereum': Network.ETH_MAINNET,
@@ -23,9 +19,7 @@ export class PriceService {
     return networkMap[chainName] || null;
   }
 
-  /**
    * Get token prices from Alchemy for a specific chain using contract addresses
-   */
   static async getTokenPricesForChain(tokenAddresses: string[], chainName: string): Promise<{[address: string]: number}> {
     const startTime = Date.now();
     
@@ -48,7 +42,6 @@ export class PriceService {
         return {};
       }
       
-      // Prepare addresses with network info for Alchemy SDK
       const addressesWithNetwork = tokenAddresses.map(address => ({
         network: alchemyNetwork,
         address: address.toLowerCase()
@@ -90,9 +83,7 @@ export class PriceService {
     }
   }
 
-  /**
    * Get token prices for multiple chains in parallel using Alchemy SDK
-   */
   static async getMultiChainTokenPrices(chainTokens: {[chainName: string]: string[]}): Promise<{[chainName: string]: {[address: string]: number}}> {
     const startTime = Date.now();
     console.log(`⏱️ [PROFILE] Starting getMultiChainTokenPrices for chains:`, Object.keys(chainTokens));
@@ -116,27 +107,21 @@ export class PriceService {
     return chainPrices;
   }
 
-  /**
    * Get token prices from Alchemy (legacy single-chain method)
-   */
   static async getTokenPrices(tokenAddresses: string[]): Promise<{[address: string]: number}> {
     console.log(`🔍 DEBUG: Legacy getTokenPrices called with ${tokenAddresses.length} addresses`);
     return this.getTokenPricesForChain(tokenAddresses, 'ethereum');
   }
 
-  /**
    * Get ETH price using Alchemy SDK by symbol
-   */
   static async getEthPrice(): Promise<number> {
     try {
-      // Try to get from cache first
       const cachedPrice = PriceCacheService.getCachedEthPrice();
       
       if (cachedPrice > 0) {
         return cachedPrice;
       }
 
-      // Fetch from Alchemy SDK by symbol
       const priceData = await this.alchemy.prices.getTokenPriceBySymbol(['ETH']);
       
       if (!priceData?.data || priceData.data.length === 0) {
@@ -167,14 +152,11 @@ export class PriceService {
     }
   }
 
-  /**
    * Get native token prices for multiple chains in parallel using Alchemy SDK
-   */
   static async getNativeTokenPrices(chainIds: string[]): Promise<{[chainId: string]: number}> {
     try {
       console.log(`🔍 DEBUG: Starting getNativeTokenPrices for chain IDs:`, chainIds);
       
-      // Get unique native token symbols from supported chains
       const chainIdToSymbol: {[chainId: string]: string} = {};
       const uniqueSymbols = new Set<string>();
       
@@ -198,12 +180,10 @@ export class PriceService {
       console.log(`📡 DEBUG: Fetching native token prices for symbols: ${symbolArray.join(', ')}`);
       console.log(`🔍 DEBUG: API Key configured:`, ALCHEMY_API_KEY ? `Yes (${ALCHEMY_API_KEY.substring(0, 8)}...)` : 'No');
       
-      // Fetch prices for all unique symbols using Alchemy SDK
       const priceData = await this.alchemy.prices.getTokenPriceBySymbol(symbolArray);
       
       console.log(`📦 DEBUG: Raw native token price response:`, JSON.stringify(priceData, null, 2));
       
-      // Build symbol to price mapping
       const symbolPrices: {[symbol: string]: number} = {};
       
       if (!priceData) {
@@ -249,7 +229,6 @@ export class PriceService {
       
       console.log(`🔍 DEBUG: Symbol prices:`, symbolPrices);
       
-      // Map back to chain IDs
       const prices: {[chainId: string]: number} = {};
       for (const chainId of chainIds) {
         const symbol = chainIdToSymbol[chainId];

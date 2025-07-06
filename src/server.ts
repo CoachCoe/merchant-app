@@ -11,34 +11,26 @@ import { TransactionMonitoringService } from './services/transactionMonitoringSe
 import { RealtimeTransactionMonitor } from './services/realtimeTransactionMonitor.js';
 import { ConnectionMonitorService } from './services/connectionMonitorService.js';
 
-// Resolve __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const PORT = process.env.PORT || 3000;
 
-// Initialize Express app and HTTP server
 const expressApp = express();
 const server = http.createServer(expressApp);
 
-// Initialize WebSocket server
 const wss = new WebSocketServer({ server });
 
-// Store connected WebSocket clients
 const clients = new Set<WebSocket>();
 
-// Main application instance (controls NFC, etc.)
 const nfcApp = new App();
 
-// Middleware to parse JSON bodies
 expressApp.use(express.json());
 
-// Serve static files from the 'src/web' directory
 const webDir = path.join(__dirname, 'web');
 expressApp.use(express.static(webDir));
 console.log(`🌐 Serving static files from: ${webDir}`);
 
-// Store active payment monitoring sessions
 interface PaymentSession {
     amount: number;
     merchantAddress: string;
@@ -52,7 +44,6 @@ interface PaymentSession {
     };
 }
 
-// Store transaction history
 interface TransactionRecord {
     id: string;
     amount: number;
@@ -70,7 +61,6 @@ interface TransactionRecord {
 const activePayments = new Map<string, PaymentSession>();
 const transactionHistory: TransactionRecord[] = [];
 
-// WebSocket connection handling
 wss.on('connection', (ws) => {
     console.log('🟢 Client connected to WebSocket');
     clients.add(ws);
@@ -89,7 +79,6 @@ wss.on('connection', (ws) => {
     });
 });
 
-// Function to broadcast messages to all connected WebSocket clients
 export function broadcast(message: object) {
     const data = JSON.stringify(message);
     clients.forEach((client) => {
@@ -103,10 +92,8 @@ export function broadcast(message: object) {
     });
 }
 
-// Explicitly define the async handler type for clarity
 type AsyncRequestHandler = (req: Request, res: Response, next?: NextFunction) => Promise<void | Response>;
 
-// Function to monitor transaction for a payment
 async function monitorTransaction(
     merchantAddress: string, 
     usdAmount: number, 
@@ -154,7 +141,6 @@ async function monitorTransaction(
 
     try {
         if (expectedPayment) {
-            // Try real-time WebSocket monitoring first, with fallback to polling
             try {
                 console.log(`🚀 Starting real-time WebSocket monitoring for ${chainName}`);
                 await RealtimeTransactionMonitor.startMonitoring(
@@ -165,11 +151,9 @@ async function monitorTransaction(
                     usdAmount,  // Pass merchant USD amount
                     chainId,
                     chainName,
-                // Success callback
                 (txHash: string, tokenSymbol: string, tokenAddress: string, decimals: number) => {
                     console.log(`✅ Payment CONFIRMED! Transaction: ${txHash}`);
                     
-                    // Generate block explorer URL
                     const getBlockExplorerUrl = (chainId: number, txHash: string): string => {
                         const explorerMap: {[key: number]: string} = {
                             1: 'https://etherscan.io/tx/',
@@ -186,7 +170,6 @@ async function monitorTransaction(
                     const explorerUrl = getBlockExplorerUrl(chainId, txHash);
                     const displayAmount = Number(expectedPayment.requiredAmount) / Math.pow(10, decimals);
                     
-                    // Create transaction record
                     const transactionRecord: TransactionRecord = {
                         id: `${txHash}-${Date.now()}`,
                         amount: displayAmount,
@@ -202,7 +185,6 @@ async function monitorTransaction(
                     
                     transactionHistory.unshift(transactionRecord);
                     
-                    // Keep only last 500 transactions
                     if (transactionHistory.length > 500) {
                         transactionHistory.splice(500);
                     }
@@ -219,7 +201,6 @@ async function monitorTransaction(
                         transaction: transactionRecord
                     });
                 },
-                // Error callback
                 (error: string) => {
                     console.error(`❌ Payment monitoring error: ${error}`);
                     clearTimeout(timeout);
@@ -234,7 +215,6 @@ async function monitorTransaction(
             } catch (realtimeError) {
                 console.warn(`⚠️  Real-time monitoring failed, falling back to polling:`, realtimeError);
                 
-                // Fallback to original polling-based monitoring
                 await TransactionMonitoringService.startMonitoring(
                     expectedPayment.tokenAddress,
                     expectedPayment.requiredAmount,
@@ -243,7 +223,6 @@ async function monitorTransaction(
                     usdAmount,
                     chainId,
                     chainName,
-                    // Success callback (same as above)
                     (txHash: string, tokenSymbol: string, tokenAddress: string, decimals: number) => {
                         console.log(`✅ Payment CONFIRMED via polling! Transaction: ${txHash}`);
                         
@@ -294,7 +273,6 @@ async function monitorTransaction(
                             transaction: transactionRecord
                         });
                     },
-                    // Error callback
                     (error: string) => {
                         console.error(`❌ Polling monitoring error: ${error}`);
                         clearTimeout(timeout);
@@ -308,9 +286,7 @@ async function monitorTransaction(
                 );
             }
         } else {
-            // Fallback to legacy monitoring for backward compatibility
             console.log(`⚠️ Using legacy monitoring (no exact payment requirements)`);
-            // Keep old monitoring code as fallback...
         }
 
         console.log(`🎯 Transaction monitoring active for ${chainName} (Chain ID: ${chainId})`);
@@ -346,14 +322,12 @@ const initiatePaymentHandler: AsyncRequestHandler = async (req, res) => {
     broadcast({ type: 'status', message: `Waiting for phone tap...` });
 
     try {
-        // This method in App will trigger NFCService.armForPaymentAndAwaitTap
         const paymentResult = await nfcApp.processPayment(amount);
         
         if (paymentResult.success && paymentResult.paymentInfo) {
             console.log(`✅ Payment request sent successfully: ${paymentResult.message}`);
             console.log(`⛓️ Payment sent on: ${paymentResult.paymentInfo.chainName} (Chain ID: ${paymentResult.paymentInfo.chainId})`);
             
-            // Start transaction monitoring for the specific chain the payment was sent on
             try {
                 await monitorTransaction(
                     merchantAddress, 
@@ -377,7 +351,6 @@ const initiatePaymentHandler: AsyncRequestHandler = async (req, res) => {
             } catch (monitoringError) {
                 console.error(`❌ Failed to start monitoring on ${paymentResult.paymentInfo.chainName}:`, monitoringError);
                 
-                // Fallback: try to monitor on Ethereum mainnet (without specific token requirements)
                 console.log(`🔄 Falling back to Ethereum mainnet monitoring...`);
                 try {
                     await monitorTransaction(merchantAddress, amount, 1, "Ethereum (fallback)");
@@ -399,7 +372,6 @@ const initiatePaymentHandler: AsyncRequestHandler = async (req, res) => {
             broadcast({ type: 'payment_success', message: paymentResult.message, amount });
             res.json({ success: true, message: paymentResult.message });
         } else if (paymentResult.success) {
-            // Fallback to Ethereum monitoring if no payment info
             console.log(`✅ Payment successful: ${paymentResult.message}`);
             console.log(`🔄 No chain information available, defaulting to Ethereum monitoring`);
             
@@ -436,10 +408,8 @@ const initiatePaymentHandler: AsyncRequestHandler = async (req, res) => {
     }
 };
 
-// HTTP endpoint to initiate payment
 expressApp.post('/initiate-payment', initiatePaymentHandler);
 
-// HTTP endpoint to generate QR code immediately (no NFC required)
 const generateQRCodeHandler: AsyncRequestHandler = async (req, res) => {
     try {
         const { amount, merchantAddress } = req.body;
@@ -452,9 +422,7 @@ const generateQRCodeHandler: AsyncRequestHandler = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Merchant address is required' });
         }
         
-        // Accept both Ethereum (0x...) and Substrate (5..., C..., E..., etc.) format addresses
         const isValidEthereumAddress = AlchemyService.isEthereumAddress(merchantAddress);
-        // Substrate addresses can be 32-48 characters and contain base58 characters
         const isValidSubstrateAddress = /^[1-9A-HJ-NP-Za-km-z]{32,48}$/.test(merchantAddress);
         
         if (!isValidEthereumAddress && !isValidSubstrateAddress) {
@@ -463,7 +431,6 @@ const generateQRCodeHandler: AsyncRequestHandler = async (req, res) => {
 
         console.log(`🔗 Generating QR code for $${amount.toFixed(2)} payment`);
         
-        // Generate a Kusama payment QR code for KSM
         const qrData = {
             amount: amount,
             tokenSymbol: 'KSM',
@@ -472,18 +439,13 @@ const generateQRCodeHandler: AsyncRequestHandler = async (req, res) => {
             tokenAddress: null // Native KSM
         };
         
-        // Generate Kusama payment URI (Substrate format)
-        // For Kusama native payments, we use a simple format that wallets can parse
         let uri: string;
         if (qrData.recipientAddress.startsWith('0x')) {
-            // EVM format address - use ethereum: URI
             uri = `ethereum:${qrData.recipientAddress}@${qrData.chainId}?value=${qrData.amount}`;
         } else {
-            // Substrate format address - use plain address format that Nova wallet can read
             uri = qrData.recipientAddress;
         }
         
-        // Generate QR code
         const QRCode = (await import('qrcode')).default;
         const qrCodeDataURL = await QRCode.toDataURL(uri, {
             width: 300,
@@ -506,7 +468,6 @@ const generateQRCodeHandler: AsyncRequestHandler = async (req, res) => {
         console.log(`✅ QR code generated for ${qrData.tokenSymbol} payment`);
         console.log(`🔗 URI: ${uri}`);
         
-        // Broadcast QR code to frontend
         broadcast({
             type: 'payment_qr',
             data: qrCodeData,
@@ -524,18 +485,15 @@ const generateQRCodeHandler: AsyncRequestHandler = async (req, res) => {
 
 expressApp.post('/generate-qr', generateQRCodeHandler);
 
-// Endpoint to get transaction history
 expressApp.get('/transaction-history', (req, res) => {
     res.json(transactionHistory);
 });
 
-// Endpoint to scan wallet for history filtering
 const scanWalletHandler: AsyncRequestHandler = async (req, res) => {
     try {
         console.log('📱 Starting wallet scan for transaction history...');
         broadcast({ type: 'status', message: 'Tap wallet to view history...' });
         
-        // Use NFC to scan for wallet address
         const scanResult = await nfcApp.scanWalletAddress();
         
         if (scanResult.success && scanResult.address) {
@@ -565,15 +523,12 @@ const scanWalletHandler: AsyncRequestHandler = async (req, res) => {
 
 expressApp.post('/scan-wallet', scanWalletHandler);
 
-// Endpoint to cancel ongoing payment operations
 const cancelPaymentHandler: AsyncRequestHandler = async (req, res) => {
     try {
         console.log('🚫 Payment cancellation requested by user');
         
-        // Cancel any ongoing NFC operations
         nfcApp.cancelCurrentOperation();
         
-        // Clear all active payment monitoring sessions
         activePayments.forEach((session, merchantAddress) => {
             console.log(`⏰ Clearing payment timeout for ${merchantAddress}`);
             clearTimeout(session.timeout);
@@ -596,7 +551,6 @@ const cancelPaymentHandler: AsyncRequestHandler = async (req, res) => {
 
 expressApp.post('/cancel-payment', cancelPaymentHandler);
 
-// Debug endpoint to check supported chains and active subscriptions
 expressApp.get('/debug/chains', (req, res) => {
     const supportedChains = SUPPORTED_CHAINS.map(chain => ({
         id: chain.id,
@@ -615,7 +569,6 @@ expressApp.get('/debug/chains', (req, res) => {
     });
 });
 
-// Add global error handlers
 process.on('uncaughtException', (error) => {
     if (error.message.includes('Cannot process ISO 14443-4 tag')) {
         console.log('💳 Payment card detected - ignoring');
@@ -628,18 +581,14 @@ process.on('unhandledRejection', (reason, promise) => {
     console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
-// Start the main application logic (NFC, Price Cache)
 async function startServerAndApp() {
     try {
-        // Initialize AlchemyService first
         try {
             AlchemyService.initialize();
             console.log('✅ AlchemyService initialized successfully');
 
-            // Start connection monitoring
             console.log('🔍 Starting connection monitoring...');
             ConnectionMonitorService.startMonitoring((status) => {
-                // Broadcast connection status to all connected clients
                 broadcast({
                     type: 'connection_status',
                     connected: status.connected,
@@ -653,11 +602,9 @@ async function startServerAndApp() {
             throw error;
         }
 
-        // Initialize PriceCacheService and start NFC listeners via App class
         await nfcApp.initializeServices(); 
         console.log('🔌 NFC Application services (including Price Cache) initialized.');
 
-        // Start the HTTP server
         server.listen(PORT, () => {
             console.log(`📡 HTTP & WebSocket Server running at http://localhost:${PORT}`);
             console.log(`✅ NFC Payment Terminal is READY. Open http://localhost:${PORT} in your browser.`);
@@ -669,7 +616,6 @@ async function startServerAndApp() {
     }
 }
 
-// Handle immediate shutdown
 function shutdown(signal: string) {
     console.log(`\n👋 Received ${signal}. Shutting down immediately.`);
     process.exit(0);

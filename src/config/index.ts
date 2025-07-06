@@ -5,17 +5,12 @@ export const AID = 'F2222222222222'; // must match the AID in your Android app
 export const GET = Buffer.from('80CA000000', 'hex'); // "GET_STRING" APDU
 export const PAYMENT = Buffer.from('80CF000000', 'hex'); // "PAYMENT" APDU
 
-// Recipient address for payments (replace with your actual receiving address)
 export const RECIPIENT_ADDRESS = '0xaD66946538E4B03B1910DadE713feBb8B59Cff60';
 
-// Processing configuration
 export const COOLDOWN_DURATION = 30000; // 30 seconds cooldown after processing
-// export const TARGET_USD = 10; // $10 target payment - This will now be dynamic
 
-// API configuration
 export const ALCHEMY_API_KEY = process.env.ALCHEMY_API_KEY || 'YOUR_API_KEY';
 
-// Multi-chain Alchemy configuration
 export interface ChainConfig {
   id: number;
   name: string;
@@ -163,13 +158,10 @@ export const SUPPORTED_CHAINS: ChainConfig[] = [
   }
 ];
 
-// Legacy single-chain config (deprecated - use SUPPORTED_CHAINS)
 export const ALCHEMY_BASE_URL = `https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`;
 
-// Alchemy Prices API base URL
 export const ALCHEMY_PRICES_API_BASE_URL = 'https://api.g.alchemy.com/prices/v1';
 
 export const config = {
     ALCHEMY_API_KEY: process.env.ALCHEMY_API_KEY || '',
-    // ... other existing config values ...
 }; 

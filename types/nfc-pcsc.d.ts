@@ -1,4 +1,3 @@
-/* minimal typings – just enough for our script */
 declare module 'nfc-pcsc' {
     import { EventEmitter } from 'events';
   

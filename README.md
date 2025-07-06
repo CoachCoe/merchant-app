@@ -112,6 +112,9 @@ This NFC payment terminal can be deployed as a **plug-and-play kiosk** on Raspbe
 - **Safety validation** prevents deployment with test addresses
 - **macOS and Linux** build support
 
+### **TODO**
+CATCH AND HANDLE TXN RESPONSE
+
 ### **Quick Deploy**
 ```bash
 # Navigate to deployment scripts

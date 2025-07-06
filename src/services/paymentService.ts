@@ -5,66 +5,41 @@ import { EthereumService } from './ethereumService.js';
 import { QRCodeService } from './qrCodeService.js';
 import { broadcast } from '../server.js';
 
-/**
  * Service for handling payment requests and EIP-681 URI generation
- */
 export class PaymentService {
-  /**
    * Get chain name from chain ID for logging
-   */
   private static getChainName(chainId: number): string {
     const chain = SUPPORTED_CHAINS.find(c => c.id === chainId);
     return chain ? chain.displayName : `Chain ${chainId}`;
   }
 
-  /**
    * Generate EIP-681 format URI for payment request with chain ID support
-   */
   static generateEIP681Uri(amount: bigint, tokenAddress: string, chainId: number): string {
     const amountString = amount.toString();
     
     if (EthereumService.isEthAddress(tokenAddress)) {
-      // ETH payment request with chain ID
-      // Format: ethereum:<recipient>@<chainId>?value=<amount>
       return `ethereum:${RECIPIENT_ADDRESS}@${chainId}?value=${amountString}`;
     } else {
-      // ERC-20 token payment request with chain ID
-      // Format: ethereum:<recipient>@<chainId>/transfer?address=<tokenContract>&uint256=<amount>
       return `ethereum:${tokenAddress}@${chainId}/transfer?address=${RECIPIENT_ADDRESS}&uint256=${amountString}`;
     }
   }
 
-  /**
    * Create NDEF URI record for the EIP-681 payment request
    * This formats the URI so Android will automatically open it with wallet apps
-   */
   static createNDEFUriRecord(uri: string): Buffer {
-    // NDEF URI Record structure:
-    // - Record Header: TNF (3 bits) + flags (5 bits)
-    // - Type Length: 1 byte
-    // - Payload Length: 1-4 bytes  
-    // - Type: "U" for URI
-    // - Payload: URI abbreviation code + URI
 
     const uriBytes = Buffer.from(uri, 'utf8');
     
-    // URI abbreviation codes - 0x00 means no abbreviation (full URI)
     const uriAbbreviation = 0x00;
     
-    // NDEF Record Header
-    // TNF = 001 (Well Known), MB=1 (Message Begin), ME=1 (Message End), SR=1 (Short Record)
     const recordHeader = 0xD1; // 11010001 binary
     
-    // Type Length (always 1 for URI records)
     const typeLength = 0x01;
     
-    // Payload Length (URI abbreviation byte + URI bytes)
     const payloadLength = uriBytes.length + 1;
     
-    // Type field ("U" for URI)
     const recordType = Buffer.from('U', 'ascii');
     
-    // Create the complete NDEF message
     const ndefMessage = Buffer.concat([
       Buffer.from([recordHeader]),           // Record header
       Buffer.from([typeLength]),             // Type length  
@@ -77,10 +52,8 @@ export class PaymentService {
     return ndefMessage;
   }
 
-  /**
    * Send payment request via NFC using NDEF formatting
    * This will make Android automatically open the URI with wallet apps
-   */
   static async sendPaymentRequest(reader: Reader, amount: bigint, tokenAddress: string, decimals: number, chainId: number): Promise<void> {
     try {
       const eip681Uri = this.generateEIP681Uri(amount, tokenAddress, chainId);
@@ -89,12 +62,10 @@ export class PaymentService {
       console.log(`\n💳 Sending EIP-681 payment request for ${chainName} (Chain ID: ${chainId}):`);
       console.log(`📄 URI: ${eip681Uri}`);
       
-      // Create NDEF URI record instead of raw string
       const ndefMessage = this.createNDEFUriRecord(eip681Uri);
       
       console.log(`📡 NDEF Message (${ndefMessage.length} bytes): ${ndefMessage.toString('hex')}`);
       
-      // Create the complete APDU: PAYMENT command + length + NDEF data
       const completeApdu = Buffer.concat([
         PAYMENT.slice(0, 4),           // Command (80CF0000) 
         Buffer.from([ndefMessage.length]), // Length of NDEF data
@@ -104,8 +75,6 @@ export class PaymentService {
       console.log(`📡 Sending APDU with NDEF length: ${completeApdu.toString('hex')}`);
       console.log(`📡 APDU breakdown: Command=${PAYMENT.slice(0,4).toString('hex')} Length=${ndefMessage.length.toString(16).padStart(2,'0')} Data=${ndefMessage.toString('hex')}`);
       
-      // Send the complete APDU with the NDEF payment request
-      // @ts-expect-error Argument of type '{}' is not assignable to parameter of type 'never'.
       const response = await reader.transmit(completeApdu, Math.max(256, ndefMessage.length + 10), {});
       const sw = response.readUInt16BE(response.length - 2);
       
@@ -122,7 +91,6 @@ export class PaymentService {
     } catch (error: any) {
       console.error('Error sending payment request:', error);
       
-      // Check for specific NFC transmission errors that indicate phone moved too quickly
       if (error.code === 'failure' && 
           (error.message?.includes('An error occurred while transmitting') ||
            error.message?.includes('TransmitError') ||
@@ -132,14 +100,11 @@ export class PaymentService {
         throw new Error('PHONE_MOVED_TOO_QUICKLY');
       }
       
-      // Re-throw other errors as-is
       throw error;
     }
   }
 
-  /**
    * Calculate payment options and send payment request
-   */
   static async calculateAndSendPayment(tokensWithPrices: TokenWithPrice[], reader: Reader, targetUSD: number): Promise<{
     selectedToken: TokenWithPrice;
     requiredAmount: bigint; // Amount in smallest units as BigInt
@@ -149,7 +114,6 @@ export class PaymentService {
     const startTime = Date.now();
     console.log(`⏱️ [PROFILE] Starting calculateAndSendPayment for $${targetUSD} with ${tokensWithPrices.length} tokens`);
     
-    // Filter tokens that have sufficient balance for targetUSD payment
     const viableTokens = tokensWithPrices.filter(token => 
       token.priceUSD > 0 && token.valueUSD >= targetUSD
     );
@@ -162,7 +126,6 @@ export class PaymentService {
     console.log(`\n💰 PAYMENT OPTIONS ($${targetUSD}):`);
     console.log(`🎯 Priority Order: L2 Stablecoin > L2 Other > L2 ETH > L1 Stablecoin > L1 Other > L1 ETH\n`);
     
-    // Group by priority categories for better display
     const L1_CHAINS = [1]; // Ethereum mainnet
     const L2_CHAINS = [8453, 42161, 10, 137, 393402133025423, 1285, 336, 2, 0]; // Base, Arbitrum, Optimism, Polygon, Starknet, Moonriver, Shiden, Kusama, Polkadot
     
@@ -219,17 +182,14 @@ export class PaymentService {
       }
     });
 
-    // Smart payment selection: prefer L2 stablecoins, then follow priority order
     const selectedToken = this.selectBestPaymentToken(viableTokens);
     const selectionTime = Date.now() - startTime;
     console.log(`⏱️ [PROFILE] Token selection and analysis completed in ${selectionTime}ms`);
     
-    // Calculate exact amount in smallest units using BigInt arithmetic
     const targetUSDCents = Math.round(targetUSD * 1e8); // Convert to 8 decimal precision
     const priceUSDCents = Math.round(selectedToken.priceUSD * 1e8);
     const requiredAmount = (BigInt(targetUSDCents) * BigInt(10 ** selectedToken.decimals)) / BigInt(priceUSDCents);
     
-    // Convert to display format
     const displayAmount = Number(requiredAmount) / Math.pow(10, selectedToken.decimals);
     
     console.log(`\n🎯 SELECTED PAYMENT:`);
@@ -241,18 +201,13 @@ export class PaymentService {
     console.log(`💵 Price: $${selectedToken.priceUSD.toFixed(4)} per ${selectedToken.symbol}`);
     console.log(`🔍 Payment will be monitored on: ${selectedToken.chainDisplayName}`);
     
-    // Send payment request using the exact amount
     const nfcTransmissionStart = Date.now();
     await this.sendPaymentRequest(reader, requiredAmount, selectedToken.address, selectedToken.decimals, selectedToken.chainId);
     const nfcTransmissionTime = Date.now() - nfcTransmissionStart;
     console.log(`⏱️ [PROFILE] NFC payment request transmission completed in ${nfcTransmissionTime}ms`);
     
-    // --- QR CODE PAYMENT SUPPORT ---
-    // Generate EIP-681 URI for QR code
     const eip681Uri = this.generateEIP681Uri(requiredAmount, selectedToken.address, selectedToken.chainId);
-    // Generate QR code (as Data URL)
     const qrCodeDataURL = await QRCodeService.generateEIP681QRCode(eip681Uri);
-    // Broadcast QR code for Apple/fallback users
     broadcast({
       type: 'payment_qr',
       data: {
@@ -265,7 +220,6 @@ export class PaymentService {
       },
       message: 'Scan this QR code with your wallet app to pay.'
     });
-    // --- END QR CODE PAYMENT SUPPORT ---
     
     console.log(`✅ Payment request sent for exactly ${requiredAmount.toString()} smallest units`);
     console.log(`📱 Customer will be asked to pay ${displayAmount} ${selectedToken.symbol}`);
@@ -273,7 +227,6 @@ export class PaymentService {
     const totalTime = Date.now() - startTime;
     console.log(`⏱️ [PROFILE] calculateAndSendPayment completed in ${totalTime}ms`);
     
-    // Return information needed for monitoring
     return {
       selectedToken,
       requiredAmount, // BigInt amount in smallest units
@@ -282,36 +235,28 @@ export class PaymentService {
     };
   }
 
-  /**
    * Smart token selection for payments with L2-first priority
    * Priority order: L2 Stablecoin > L2 Other > L2 ETH > L1 Stablecoin > L1 Other > L1 ETH
-   */
   private static selectBestPaymentToken(viableTokens: TokenWithPrice[]): TokenWithPrice {
-    // Define L1 and L2 chains
     const L1_CHAINS = [1]; // Ethereum mainnet
     const L2_CHAINS = [8453, 42161, 10, 137, 393402133025423, 1285, 336, 2, 0]; // Base, Arbitrum, Optimism, Polygon, Starknet, Moonriver, Shiden, Kusama, Polkadot
     
-    // Helper function to check if token is a stablecoin
     const isStablecoin = (token: TokenWithPrice): boolean => {
       return /^(USDC|USDT|DAI|BUSD|FRAX|LUSD|USDCE|USDC\.E|USDT\.E|DAI\.E)$/i.test(token.symbol);
     };
     
-    // Helper function to check if token is ETH (native token)
     const isETH = (token: TokenWithPrice): boolean => {
       return token.isNativeToken && token.symbol === 'ETH';
     };
     
-    // Helper function to check if token is MATIC (Polygon native)
     const isMATIC = (token: TokenWithPrice): boolean => {
       return token.isNativeToken && token.symbol === 'MATIC';
     };
     
-    // Helper function to check if token is "other" (not stablecoin, not native)
     const isOther = (token: TokenWithPrice): boolean => {
       return !isStablecoin(token) && !token.isNativeToken;
     };
     
-    // Categorize tokens by chain type and token type
     const categorizeTokens = (tokens: TokenWithPrice[]) => {
       const categories = {
         l2Stablecoins: [] as TokenWithPrice[],
@@ -337,7 +282,6 @@ export class PaymentService {
             categories.l2Other.push(token);
           }
         } else {
-          // L1 tokens
           if (isStablecoin(token)) {
             categories.l1Stablecoins.push(token);
           } else if (isETH(token)) {
@@ -353,7 +297,6 @@ export class PaymentService {
     
     const categories = categorizeTokens(viableTokens);
     
-    // Display selection summary
     console.log(`\n🧮 TOKEN SELECTION ANALYSIS:`);
     console.log(`   L2 Stablecoins: ${categories.l2Stablecoins.length} tokens`);
     console.log(`   L2 Other Tokens: ${categories.l2Other.length} tokens`);
@@ -362,14 +305,12 @@ export class PaymentService {
     console.log(`   L1 Other Tokens: ${categories.l1Other.length} tokens`);
     console.log(`   L1 ETH: ${categories.l1ETH.length} tokens`);
     
-    // Sort each category by value (highest first) for best selection within each priority level
     const sortByValue = (a: TokenWithPrice, b: TokenWithPrice) => b.valueUSD - a.valueUSD;
     
     Object.values(categories).forEach(category => {
       category.sort(sortByValue);
     });
     
-    // Priority selection logic
     if (categories.l2Stablecoins.length > 0) {
       const selected = categories.l2Stablecoins[0];
       console.log(`💡 Preferred payment: L2 Stablecoin - ${selected.symbol} on ${selected.chainDisplayName}`);
@@ -412,7 +353,6 @@ export class PaymentService {
       return selected;
     }
     
-    // Fallback (should not happen if viableTokens is not empty)
     console.log(`💡 Fallback: Using first available token - ${viableTokens[0].symbol}`);
     return viableTokens[0];
   }

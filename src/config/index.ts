@@ -1,22 +1,31 @@
 import dotenv from 'dotenv';
+import { envSchema } from './validation.js';
+
 dotenv.config();
 
-export const AID = 'F2222222222222'; // must match the AID in your Android app
+// Validate environment variables
+const env = envSchema.parse(process.env);
+
+export const AID = process.env.NFC_AID || 'F2222222222222'; // must match the AID in your Android app
 export const GET = Buffer.from('80CA000000', 'hex'); // "GET_STRING" APDU
 export const PAYMENT = Buffer.from('80CF000000', 'hex'); // "PAYMENT" APDU
 
-export const RECIPIENT_ADDRESS = '0xaD66946538E4B03B1910DadE713feBb8B59Cff60';
+// Recipient address should be configurable via environment
+// Using a valid Substrate address format (SS58 encoded)
+export const RECIPIENT_ADDRESS = process.env.RECIPIENT_ADDRESS || '15oF4uVJwmo4TdGW7VfQxNLavjCXviqxT9S1MgbjMNHr6Sp5';
+
+// Validate recipient address format
+if (!/^[1-9A-HJ-NP-Za-km-z]{32,48}$/.test(RECIPIENT_ADDRESS)) {
+  throw new Error('Invalid RECIPIENT_ADDRESS format. Must be a valid Substrate address.');
+}
 
 export const COOLDOWN_DURATION = 30000; // 30 seconds cooldown after processing
-
-export const ALCHEMY_API_KEY = process.env.ALCHEMY_API_KEY || 'YOUR_API_KEY';
 
 export interface ChainConfig {
   id: number;
   name: string;
   displayName: string;
-  alchemyNetwork: string;
-  alchemyUrl: string;
+  rpcUrl: string;
   nativeToken: {
     symbol: string;
     name: string;
@@ -27,89 +36,34 @@ export interface ChainConfig {
 
 export const SUPPORTED_CHAINS: ChainConfig[] = [
   {
-    id: 1,
-    name: 'ethereum',
-    displayName: 'Ethereum',
-    alchemyNetwork: 'eth-mainnet',
-    alchemyUrl: `https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
+    id: 0,
+    name: 'polkadot',
+    displayName: 'Polkadot Relay Chain',
+    rpcUrl: `https://polkadot-rpc.polkadot.io`,
     nativeToken: {
-      symbol: 'ETH',
-      name: 'Ethereum',
-      decimals: 18
+      symbol: 'DOT',
+      name: 'Polkadot',
+      decimals: 10
     },
-    coingeckoId: 'ethereum'
+    coingeckoId: 'polkadot'
   },
   {
-    id: 8453,
-    name: 'base',
-    displayName: 'Base',
-    alchemyNetwork: 'base-mainnet',
-    alchemyUrl: `https://base-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
+    id: 2,
+    name: 'kusama',
+    displayName: 'Kusama Relay Chain',
+    rpcUrl: `https://kusama-rpc.polkadot.io`,
     nativeToken: {
-      symbol: 'ETH',
-      name: 'Ethereum',
-      decimals: 18
+      symbol: 'KSM',
+      name: 'Kusama',
+      decimals: 12
     },
-    coingeckoId: 'ethereum'
-  },
-  {
-    id: 42161,
-    name: 'arbitrum',
-    displayName: 'Arbitrum One',
-    alchemyNetwork: 'arb-mainnet',
-    alchemyUrl: `https://arb-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
-    nativeToken: {
-      symbol: 'ETH',
-      name: 'Ethereum',
-      decimals: 18
-    },
-    coingeckoId: 'ethereum'
-  },
-  {
-    id: 10,
-    name: 'optimism',
-    displayName: 'Optimism',
-    alchemyNetwork: 'opt-mainnet',
-    alchemyUrl: `https://opt-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
-    nativeToken: {
-      symbol: 'ETH',
-      name: 'Ethereum',
-      decimals: 18
-    },
-    coingeckoId: 'ethereum'
-  },
-  {
-    id: 137,
-    name: 'polygon',
-    displayName: 'Polygon',
-    alchemyNetwork: 'polygon-mainnet',
-    alchemyUrl: `https://polygon-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
-    nativeToken: {
-      symbol: 'MATIC',
-      name: 'Polygon',
-      decimals: 18
-    },
-    coingeckoId: 'matic-network'
-  },
-  {
-    id: 393402133025423,
-    name: 'starknet',
-    displayName: 'Starknet',
-    alchemyNetwork: 'starknet-mainnet',
-    alchemyUrl: `https://starknet-mainnet.g.alchemy.com/starknet/version/rpc/v0_6/${ALCHEMY_API_KEY}`,
-    nativeToken: {
-      symbol: 'ETH',
-      name: 'Ethereum',
-      decimals: 18
-    },
-    coingeckoId: 'ethereum'
+    coingeckoId: 'kusama'
   },
   {
     id: 1285,
     name: 'moonriver',
     displayName: 'Moonriver (Kusama)',
-    alchemyNetwork: 'moonriver-mainnet',
-    alchemyUrl: `https://rpc.api.moonriver.moonbeam.network`, // Public RPC endpoint
+    rpcUrl: `https://rpc.api.moonriver.moonbeam.network`,
     nativeToken: {
       symbol: 'MOVR',
       name: 'Moonriver',
@@ -121,47 +75,14 @@ export const SUPPORTED_CHAINS: ChainConfig[] = [
     id: 336,
     name: 'shiden',
     displayName: 'Shiden (Kusama)',
-    alchemyNetwork: 'shiden-mainnet',
-    alchemyUrl: `https://rpc.shiden.astar.network`, // Public RPC endpoint
+    rpcUrl: `https://rpc.shiden.astar.network`,
     nativeToken: {
       symbol: 'SDN',
       name: 'Shiden',
       decimals: 18
     },
     coingeckoId: 'shiden'
-  },
-  {
-    id: 2,
-    name: 'kusama',
-    displayName: 'Kusama Relay Chain',
-    alchemyNetwork: 'kusama-mainnet',
-    alchemyUrl: `https://kusama-rpc.polkadot.io`, // Public RPC endpoint
-    nativeToken: {
-      symbol: 'KSM',
-      name: 'Kusama',
-      decimals: 12
-    },
-    coingeckoId: 'kusama'
-  },
-  {
-    id: 0,
-    name: 'polkadot',
-    displayName: 'Polkadot Relay Chain',
-    alchemyNetwork: 'polkadot-mainnet',
-    alchemyUrl: `https://polkadot-rpc.polkadot.io`, // Public RPC endpoint
-    nativeToken: {
-      symbol: 'DOT',
-      name: 'Polkadot',
-      decimals: 10
-    },
-    coingeckoId: 'polkadot'
   }
 ];
 
-export const ALCHEMY_BASE_URL = `https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`;
-
-export const ALCHEMY_PRICES_API_BASE_URL = 'https://api.g.alchemy.com/prices/v1';
-
-export const config = {
-    ALCHEMY_API_KEY: process.env.ALCHEMY_API_KEY || '',
-}; 
+export const COINGECKO_API_BASE_URL = 'https://api.coingecko.com/api/v3';

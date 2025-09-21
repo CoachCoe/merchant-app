@@ -1,26 +1,23 @@
-# NFC Payment Terminal
+# Polkadot NFC Payment Terminal
 
-A multi-chain NFC payment terminal that processes cryptocurrency payments across 7 blockchain networks with real-time transaction monitoring and comprehensive history tracking.
+A Polkadot ecosystem NFC payment terminal that processes cryptocurrency payments across Polkadot and Kusama networks with real-time transaction monitoring and comprehensive history tracking.
 
 ## 🌐 Supported Networks
 
-- **Ethereum**
-- **Base** 
-- **Arbitrum** 
-- **Optimism** 
-- **Polygon**
-- **Moonriver (Kusama)**
-- **Shiden (Kusama)**
+- **Polkadot Relay Chain** (DOT)
+- **Kusama Relay Chain** (KSM)
+- **Moonriver** (Kusama Parachain - MOVR)
+- **Shiden** (Kusama Parachain - SDN)
 
 ### 🎯 **Smart Payment Priority**
 
-Rather than negotiate a chain / token combo with the merchant, the payment terminal handles it automatically. First it figures out a chain the merchant supports that you also have funds on, then sends a transaction with ETH or an ERC-20 token with this priority:
+Rather than negotiate a chain / token combo with the merchant, the payment terminal handles it automatically. First it figures out a chain the merchant supports that you also have funds on, then sends a transaction with native tokens using this priority:
 
 ```
-L2 Stablecoin > L2 Other > L2 ETH > L1 Stablecoin > L1 Other > L1 ETH
+Relay Chain Tokens > Parachain Tokens > Other Tokens
 ```
 
-**Note:** Kusama parachains (Moonriver, Shiden) are treated as L2 networks for payment priority, supporting their native tokens (MOVR, SDN) and ERC-20 tokens.
+**Note:** The terminal prioritizes Polkadot and Kusama relay chain tokens (DOT, KSM) over parachain tokens (MOVR, SDN) for optimal security and finality.
 
 ## 🚀 Quick Start
 
@@ -31,7 +28,8 @@ L2 Stablecoin > L2 Other > L2 ETH > L1 Stablecoin > L1 Other > L1 ETH
 
 2. **Environment setup:**
    ```bash
-   echo "ALCHEMY_API_KEY=your_alchemy_api_key_here" > .env
+   # No API key required - uses public RPC endpoints
+   touch .env
    ```
 
 3. **Run the terminal:**
@@ -49,12 +47,12 @@ src/
 ├── server.ts                   # Express server & WebSocket handler
 ├── app.ts                     # Main application orchestrator
 ├── web/index.html             # Payment terminal UI
-├── config/index.ts            # Multi-chain configuration
+├── config/index.ts            # Polkadot chain configuration
 └── services/
     ├── nfcService.ts          # NFC reader & wallet scanning
-    ├── alchemyService.ts      # Multi-chain balance & monitoring
-    ├── paymentService.ts      # Payment selection & EIP-681 generation
-    ├── ethereumService.ts     # Address validation utilities
+    ├── polkadotService.ts     # Polkadot balance & monitoring
+    ├── paymentService.ts      # Payment selection & QR generation
+    ├── polkadotPriceService.ts # Price fetching for Polkadot tokens
     └── addressProcessor.ts    # Duplicate processing prevention
 scripts/
 └── rpi-deploy/
@@ -81,16 +79,16 @@ scripts/
 ## 🔄 Payment Flow
 
 1. **NFC Detection** → Customer taps device
-2. **Multi-Chain Fetching** → Portfolio analysis across all 7 chains
+2. **Multi-Chain Fetching** → Portfolio analysis across Polkadot ecosystem
 3. **Smart Selection** → Optimal payment token based on priority system
-4. **EIP-681 Generation** → Payment request with chain ID
-5. **Real-Time Monitoring** → WebSocket/polling for transaction confirmation
+4. **QR Code Generation** → Payment request with Substrate address
+5. **Real-Time Monitoring** → Polling for transaction confirmation
 6. **History Logging** → Transaction stored with full metadata
 
 ## 🛡️ Transaction Monitoring
 
-- **WebSocket monitoring** for Ethereum, Base, Arbitrum, Optimism, Polygon, Moonriver, Shiden
-- **Polling-based monitoring** fallback
+- **Polling-based monitoring** for all Polkadot ecosystem chains
+- **Real-time balance checking** using Polkadot.js API
 - **Automatic timeout** after 5 minutes
 - **Block explorer integration** for transaction verification
 - **Status tracking**: detected → confirmed → failed

@@ -1,13 +1,11 @@
 import { NFC, Reader } from 'nfc-pcsc';
 import { AID, GET } from '../config/index.js';
 import { CardData } from '../types/index.js';
-import { EthereumService } from './ethereumService.js';
-import { AddressProcessor } from './addressProcessor.js';
-import { AlchemyService } from './alchemyService.js';
+import { PolkadotService } from './polkadotService.js';
 import { PaymentService } from './paymentService.js';
 import { broadcast } from '../server.js';
 
- * Service for handling NFC reader operations
+// Service for handling NFC reader operations
 export class NFCService {
   private nfc: NFC;
   private paymentArmed: boolean = false;
@@ -30,19 +28,19 @@ export class NFCService {
     this.setupNFC();
   }
 
-   * Setup NFC readers and event handlers
+  // Setup NFC readers and event handlers
   private setupNFC(): void {
     console.log(`🔧 DEBUG: Instance #${this.instanceId} - Setting up NFC readers`);
     this.nfc.on('reader', (reader: Reader) => {
       console.log(`💳 Instance #${this.instanceId} - NFC Reader Detected:`, reader.name);
-      reader.aid = AID; // ★ IMPORTANT ★ Set AID immediately
+      reader.aid = AID;
       console.log(`🔑 Instance #${this.instanceId} - AID set for reader:`, AID);
       broadcast({ type: 'nfc_status', message: `Reader connected: ${reader.name}`});
       this.setupReaderEvents(reader);
     });
   }
 
-   * Setup event handlers for a specific reader
+  // Setup event handlers for a specific reader
   private setupReaderEvents(reader: Reader): void {
     console.log(`🔧 DEBUG: Instance #${this.instanceId} - Setting up event handlers for reader: ${reader.name}`);
     
@@ -66,7 +64,7 @@ export class NFCService {
     });
   }
 
-   * Handle card detection and processing
+  // Handle card detection and processing
   private async handleCard(reader: Reader, card: CardData): Promise<void> {
     console.log(`🔧 DEBUG: Instance #${this.instanceId} - Card event handler called, this.paymentArmed = ${this.paymentArmed}`);
     console.log('📱 Card Detected:', {
@@ -87,7 +85,7 @@ export class NFCService {
     let processedAddress: string | null = null;
 
     try {
-      const resp = await reader.transmit(GET, 256, {});
+      const resp = await reader.transmit(GET, 256);
       const sw = resp.readUInt16BE(resp.length - 2);
       
       if (sw !== 0x9000) {
@@ -97,8 +95,8 @@ export class NFCService {
       const phoneResponse = resp.slice(0, -2).toString();
       console.log('📱 Phone says →', phoneResponse);
       
-      if (EthereumService.isEthereumAddress(phoneResponse)) {
-        processedAddress = EthereumService.normalizeEthereumAddress(phoneResponse);
+      if (PolkadotService.isSubstrateAddress(phoneResponse)) {
+        processedAddress = phoneResponse;
       }
       
       if (this.walletScanArmed) {
@@ -106,289 +104,204 @@ export class NFCService {
       } else if (this.paymentArmed && this.currentPaymentAmount !== null) {
         await this.processPhoneResponse(phoneResponse, reader, this.currentPaymentAmount);
       }
-      
-    } catch (e) {
-      console.error('❌ Error processing card:', e);
-      
-      if (processedAddress) {
-        AddressProcessor.finishProcessing(processedAddress);
-      }
+    } catch (error: any) {
+      console.error(`❌ Instance #${this.instanceId} - Error processing card:`, error);
       
       if (this.cardHandlerResolve) {
-        this.cardHandlerResolve({ success: false, message: 'Error processing card', errorType: 'CARD_ERROR' });
-        this.cardHandlerResolve = null;
+        this.cardHandlerResolve({
+          success: false,
+          message: `Error processing card: ${error.message}`,
+          errorType: 'CARD_PROCESSING_ERROR'
+        });
+        this.resetPaymentState();
       }
     }
   }
 
-   * Process the response from the phone
-  private async processPhoneResponse(phoneResponse: string, reader: Reader, amount: number): Promise<void> {
-    if (EthereumService.isEthereumAddress(phoneResponse)) {
-      const transactionFlowStart = Date.now();
-      const ethAddress = EthereumService.normalizeEthereumAddress(phoneResponse);
-      console.log(`✓ Detected Ethereum address: ${ethAddress}`);
-      console.log(`⏱️ [PROFILE] Starting transaction flow for $${amount} payment`);
+  // Process wallet address scan
+  private async processWalletScan(phoneResponse: string, reader: Reader): Promise<void> {
+    console.log(`🔍 Instance #${this.instanceId} - Processing wallet scan`);
+    
+    if (PolkadotService.isSubstrateAddress(phoneResponse)) {
+      console.log(`✅ Instance #${this.instanceId} - Valid Substrate address received: ${phoneResponse}`);
+      broadcast({ type: 'wallet_scanned', message: 'Wallet address scanned successfully', address: phoneResponse });
       
-      if (!AddressProcessor.canProcessAddress(ethAddress)) {
-        const blockReason = AddressProcessor.getProcessingBlockReason(ethAddress);
-        console.log(`🚫 Address ${ethAddress} cannot be processed: ${blockReason}`);
-        if (this.cardHandlerResolve) {
-          this.cardHandlerResolve({ success: false, message: blockReason || 'Address cannot be processed', errorType: 'DUPLICATE_ADDRESS' });
-          this.cardHandlerResolve = null;
-        }
-        return;
-      }
-      
-      console.log(`🔄 Starting to process address: ${ethAddress}`);
-      AddressProcessor.startProcessing(ethAddress);
-      
-      let paymentSuccessful = false;
-      
-      try {
-        broadcast({ type: 'status', message: 'Loading tokens...' });
-        
-        let portfolio;
-        try {
-          const balanceFetchStart = Date.now();
-          portfolio = await AlchemyService.fetchMultiChainBalances(ethAddress);
-          const balanceFetchTime = Date.now() - balanceFetchStart;
-          console.log(`⏱️ [PROFILE] Total balance fetch time: ${balanceFetchTime}ms`);
-        } catch (fetchError: any) {
-          console.error('💥 Error fetching tokens from Alchemy:', fetchError);
-          throw new Error('FAILED_TO_FETCH_TOKENS');
-        }
-        
-        const paymentStart = Date.now();
-        const paymentInfo = await PaymentService.calculateAndSendPayment(portfolio.allTokens, reader, amount);
-        const paymentTime = Date.now() - paymentStart;
-        console.log(`⏱️ [PROFILE] Total payment processing time: ${paymentTime}ms`);
-        
-        broadcast({ type: 'status', message: 'Waiting for payment...' });
-        
-        paymentSuccessful = true; // Payment request was sent successfully
-        
-        const totalTransactionTime = Date.now() - transactionFlowStart;
-        console.log(`⏱️ [PROFILE] COMPLETE TRANSACTION FLOW: ${totalTransactionTime}ms`);
-        console.log(`⏱️ [PROFILE] BREAKDOWN: Balance fetch: ${Date.now() - transactionFlowStart - paymentTime}ms, Payment: ${paymentTime}ms`);
-        
-        if (this.cardHandlerResolve) {
-          this.cardHandlerResolve({ 
-            success: true, 
-            message: `Payment request for $${amount.toFixed(2)} sent to ${ethAddress}`,
-            paymentInfo
-          });
-          this.cardHandlerResolve = null;
-        }
-        
-      } catch (balanceError: any) {
-        console.error('💥 Error processing address balances/payment:', balanceError);
-        console.log(`🧹 Cleaning up address ${ethAddress} due to error: ${balanceError.message}`);
-        
-        if (balanceError.message === 'PHONE_MOVED_TOO_QUICKLY') {
-          console.log('📱💨 Phone moved too quickly - broadcasting error but staying armed for retry');
-          broadcast({ 
-            type: 'payment_failure', 
-            message: 'Phone moved too quickly', 
-            errorType: 'PHONE_MOVED_TOO_QUICKLY' 
-          });
-          
-          AddressProcessor.finishProcessing(ethAddress);
-          return; // Exit without resolving the promise
-        }
-        
-        paymentSuccessful = false;
-        
-        if (this.cardHandlerResolve) {
-          let errorMessage: string;
-          let errorType: string;
-          
-          if (balanceError.message === 'FAILED_TO_FETCH_TOKENS') {
-            errorMessage = 'Failed to fetch tokens';
-            errorType = 'TOKEN_FETCH_ERROR';
-          } else if (balanceError.message === "Customer doesn't have enough funds") {
-            errorMessage = balanceError.message;
-            errorType = 'PAYMENT_ERROR';
-          } else {
-            errorMessage = 'Error processing payment';
-            errorType = 'PAYMENT_ERROR';
-          }
-          
-          this.cardHandlerResolve({ success: false, message: errorMessage, errorType: errorType });
-          this.cardHandlerResolve = null;
-        }
-      } finally {
-        console.log(`🏁 Finishing processing for address: ${ethAddress} (successful: ${paymentSuccessful})`);
-        
-        AddressProcessor.finishProcessing(ethAddress);
+      if (this.walletScanResolve) {
+        this.walletScanResolve({
+          success: true,
+          message: 'Wallet address scanned successfully',
+          address: phoneResponse
+        });
       }
     } else {
-      console.log('📱 Response is not an Ethereum address');
-      if (this.cardHandlerResolve) {
-        this.cardHandlerResolve({ success: false, message: 'Invalid Ethereum address', errorType: 'INVALID_ADDRESS' });
-        this.cardHandlerResolve = null;
+      console.log(`❌ Instance #${this.instanceId} - Invalid address format: ${phoneResponse}`);
+      broadcast({ type: 'wallet_scan_error', message: 'Invalid address format' });
+      
+      if (this.walletScanResolve) {
+        this.walletScanResolve({
+          success: false,
+          message: 'Invalid address format',
+          errorType: 'INVALID_ADDRESS'
+        });
       }
     }
-  }
-
-   * Start the NFC service
-  public startListening(): void {
-    console.log('🟢 NFCService: Starting to listen for readers...');
-    console.log('📡 NFC Service is now listening for readers.');
-  }
-
-   * Arm the service for payment and wait for a card tap
-  public async armForPaymentAndAwaitTap(amount: number): Promise<{ success: boolean; message: string; errorType?: string; paymentInfo?: any }> {
-    console.log(`🔧 DEBUG: Instance #${this.instanceId} - Arming payment service for $${amount.toFixed(2)}`);
     
-    if (this.paymentArmed || this.cardHandlerResolve || this.cardHandlerPromise) {
-      console.log(`⚠️ WARNING: Instance #${this.instanceId} - Found leftover payment state, cleaning up...`);
-      console.log(`🔍 Previous state - paymentArmed: ${this.paymentArmed}, cardHandlerResolve: ${!!this.cardHandlerResolve}, cardHandlerPromise: ${!!this.cardHandlerPromise}`);
-      this.disarmPayment();
+    this.resetWalletScanState();
+  }
+
+  // Process payment request
+  private async processPhoneResponse(phoneResponse: string, reader: Reader, amount: number): Promise<void> {
+    console.log(`💳 Instance #${this.instanceId} - Processing payment for $${amount}`);
+    
+    if (!PolkadotService.isSubstrateAddress(phoneResponse)) {
+      console.log(`❌ Instance #${this.instanceId} - Invalid address format: ${phoneResponse}`);
+      broadcast({ type: 'payment_error', message: 'Invalid address format' });
+      
+      if (this.cardHandlerResolve) {
+        this.cardHandlerResolve({
+          success: false,
+          message: 'Invalid address format',
+          errorType: 'INVALID_ADDRESS'
+        });
+      }
+      this.resetPaymentState();
+      return;
+    }
+
+    try {
+      broadcast({ type: 'status', message: 'Loading tokens...' });
+      
+      let portfolio;
+      try {
+        const balanceFetchStart = Date.now();
+        portfolio = await PolkadotService.getBalancesForAllChains(phoneResponse);
+        const balanceFetchTime = Date.now() - balanceFetchStart;
+        console.log(`⏱️ [PROFILE] Total balance fetch time: ${balanceFetchTime}ms`);
+      } catch (fetchError: any) {
+        console.error('💥 Error fetching tokens from Polkadot:', fetchError);
+        throw new Error('FAILED_TO_FETCH_TOKENS');
+      }
+      
+      const paymentStart = Date.now();
+      const paymentInfo = await PaymentService.calculateAndSendPayment(portfolio, reader, amount);
+      const paymentTime = Date.now() - paymentStart;
+      console.log(`⏱️ [PROFILE] Payment processing completed in ${paymentTime}ms`);
+      
+      console.log(`✅ Instance #${this.instanceId} - Payment processed successfully`);
+      broadcast({ type: 'payment_sent', message: 'Payment request sent successfully' });
+      
+      if (this.cardHandlerResolve) {
+        this.cardHandlerResolve({
+          success: true,
+          message: 'Payment request sent successfully',
+          paymentInfo: paymentInfo
+        });
+      }
+    } catch (error: any) {
+      console.error(`❌ Instance #${this.instanceId} - Payment processing error:`, error);
+      broadcast({ type: 'payment_error', message: `Payment failed: ${error.message}` });
+      
+      if (this.cardHandlerResolve) {
+        this.cardHandlerResolve({
+          success: false,
+          message: `Payment failed: ${error.message}`,
+          errorType: error.message === 'FAILED_TO_FETCH_TOKENS' ? 'FETCH_ERROR' : 'PAYMENT_ERROR'
+        });
+      }
     }
     
+    this.resetPaymentState();
+  }
+
+  // Arm the NFC reader for payment processing
+  async armForPaymentAndAwaitTap(amount: number): Promise<{ success: boolean; message: string; errorType?: string; paymentInfo?: any }> {
+    console.log(`💳 Instance #${this.instanceId} - Arming for payment: $${amount}`);
+    
+    if (this.paymentArmed || this.walletScanArmed) {
+      return {
+        success: false,
+        message: 'Reader is already armed for another operation',
+        errorType: 'ALREADY_ARMED'
+      };
+    }
+
     this.paymentArmed = true;
     this.currentPaymentAmount = amount;
-    console.log(`💰 NFCService: Instance #${this.instanceId} - Armed for payment of $${amount.toFixed(2)}. Waiting for tap...`);
-    console.log(`🔍 DEBUG: Instance #${this.instanceId} - After arming - paymentArmed: ${this.paymentArmed}, amount: ${this.currentPaymentAmount}`);
     
-    AddressProcessor.debugState();
+    broadcast({ type: 'nfc_status', message: 'Tap your device to pay' });
     
-    this.cardHandlerPromise = new Promise((resolve) => {
+    return new Promise((resolve) => {
       this.cardHandlerResolve = resolve;
+      this.cardHandlerPromise = new Promise((resolve) => {
+        this.cardHandlerResolve = resolve;
+      });
     });
+  }
 
-    const timeoutId = setTimeout(() => {
-      console.log(`⏰ DEBUG: Payment timeout reached, disarming...`);
-      if (this.cardHandlerResolve) {
-        this.cardHandlerResolve({ success: false, message: 'Payment timeout', errorType: 'TIMEOUT' });
-        this.cardHandlerResolve = null;
-      }
-      this.disarmPayment();
-    }, 30000);
+  // Arm the NFC reader for wallet address scanning
+  async scanForWalletAddress(): Promise<{ success: boolean; message: string; address?: string; errorType?: string }> {
+    console.log(`🔍 Instance #${this.instanceId} - Starting wallet address scan`);
+    
+    if (this.paymentArmed || this.walletScanArmed) {
+      return {
+        success: false,
+        message: 'Reader is already armed for another operation',
+        errorType: 'ALREADY_ARMED'
+      };
+    }
 
-    try {
-      const result = await this.cardHandlerPromise;
-      console.log(`🔧 DEBUG: Card handler promise resolved, clearing timeout and disarming`);
-      clearTimeout(timeoutId);
-      this.disarmPayment();
-      return result;
-    } catch (error) {
-      console.log(`🔧 DEBUG: Card handler promise error, clearing timeout and disarming`);
-      clearTimeout(timeoutId);
-      this.disarmPayment();
-      return { success: false, message: 'Payment processing error', errorType: 'PROCESSING_ERROR' };
+    this.walletScanArmed = true;
+    
+    broadcast({ type: 'nfc_status', message: 'Tap your device to scan wallet address' });
+    
+    return new Promise((resolve) => {
+      this.walletScanResolve = resolve;
+      this.walletScanPromise = new Promise((resolve) => {
+        this.walletScanResolve = resolve;
+      });
+    });
+  }
+
+  // Cancel current operation
+  cancelCurrentOperation(): void {
+    console.log(`❌ Instance #${this.instanceId} - Cancelling current operation`);
+    
+    if (this.paymentArmed) {
+      this.resetPaymentState();
+      broadcast({ type: 'nfc_status', message: 'Payment cancelled' });
+    }
+    
+    if (this.walletScanArmed) {
+      this.resetWalletScanState();
+      broadcast({ type: 'nfc_status', message: 'Wallet scan cancelled' });
     }
   }
 
-   * Disarm the payment service
-  private disarmPayment(): void {
-    console.log(`🔧 DEBUG: Instance #${this.instanceId} - disarmPayment() called - was armed: ${this.paymentArmed}`);
+  // Reset payment state
+  private resetPaymentState(): void {
     this.paymentArmed = false;
     this.currentPaymentAmount = null;
-    this.cardHandlerPromise = null;
     this.cardHandlerResolve = null;
-    
-    console.log(`🧹 Instance #${this.instanceId} - Cleaning up any stuck address processing states...`);
-    AddressProcessor.clearAllProcessing();
+    this.cardHandlerPromise = null;
   }
 
-   * Process wallet address scan response
-  private async processWalletScan(phoneResponse: string, reader: Reader): Promise<void> {
-    if (EthereumService.isEthereumAddress(phoneResponse)) {
-      const ethAddress = EthereumService.normalizeEthereumAddress(phoneResponse);
-      console.log(`✓ Wallet address scanned: ${ethAddress}`);
-      
-      if (this.walletScanResolve) {
-        this.walletScanResolve({ 
-          success: true, 
-          message: `Wallet scanned successfully`,
-          address: ethAddress
-        });
-        this.walletScanResolve = null;
-      }
-    } else {
-      console.log('📱 Response is not an Ethereum address');
-      if (this.walletScanResolve) {
-        this.walletScanResolve({ 
-          success: false, 
-          message: 'Invalid Ethereum address', 
-          errorType: 'INVALID_ADDRESS' 
-        });
-        this.walletScanResolve = null;
-      }
-    }
-  }
-
-   * Scan for wallet address (for transaction history filtering)
-  public async scanForWalletAddress(): Promise<{ success: boolean; message: string; address?: string; errorType?: string }> {
-    this.walletScanArmed = true;
-    console.log('🔍 NFCService: Armed for wallet address scan. Waiting for tap...');
-    
-    this.walletScanPromise = new Promise((resolve) => {
-      this.walletScanResolve = resolve;
-    });
-
-    const timeoutId = setTimeout(() => {
-      if (this.walletScanResolve) {
-        this.walletScanResolve({ success: false, message: 'Wallet scan timeout', errorType: 'TIMEOUT' });
-        this.walletScanResolve = null;
-      }
-      this.disarmWalletScan();
-    }, 30000);
-
-    try {
-      const result = await this.walletScanPromise;
-      clearTimeout(timeoutId);
-      this.disarmWalletScan();
-      return result;
-    } catch (error) {
-      clearTimeout(timeoutId);
-      this.disarmWalletScan();
-      return { success: false, message: 'Wallet scan processing error', errorType: 'PROCESSING_ERROR' };
-    }
-  }
-
-   * Disarm the wallet scan service
-  private disarmWalletScan(): void {
+  // Reset wallet scan state
+  private resetWalletScanState(): void {
     this.walletScanArmed = false;
-    this.walletScanPromise = null;
     this.walletScanResolve = null;
+    this.walletScanPromise = null;
   }
 
-   * Cancel any ongoing operations (payment or wallet scan)
-  public cancelCurrentOperation(): void {
-    console.log('🚫 Cancelling current NFC operation...');
-    console.log(`🔧 DEBUG: cancelCurrentOperation() - paymentArmed: ${this.paymentArmed}, walletScanArmed: ${this.walletScanArmed}`);
-    
-    if (this.paymentArmed && this.cardHandlerResolve) {
-      console.log('🚫 Cancelling ongoing payment operation');
-      this.cardHandlerResolve({ 
-        success: false, 
-        message: 'Payment cancelled by user', 
-        errorType: 'USER_CANCELLED' 
-      });
-      this.cardHandlerResolve = null;
-      this.disarmPayment();
-    }
-    
-    if (this.walletScanArmed && this.walletScanResolve) {
-      console.log('🚫 Cancelling ongoing wallet scan operation');
-      this.walletScanResolve({ 
-        success: false, 
-        message: 'Wallet scan cancelled by user', 
-        errorType: 'USER_CANCELLED' 
-      });
-      this.walletScanResolve = null;
-      this.disarmWalletScan();
-    }
-    
-    AddressProcessor.clearAllProcessing();
-    
-    console.log('✅ NFC operation cancelled successfully');
+  // Start listening for NFC readers
+  startListening(): void {
+    console.log(`🟢 Instance #${this.instanceId} - Starting to listen for readers...`);
+    // NFC starts automatically when created
+    console.log(`📡 Instance #${this.instanceId} - NFC Service is now listening for readers.`);
   }
 
-   * Stop the NFC service
-  public stopListening(): void {
-    console.log('🔴 NFCService: Stopping listeners...');
+  // Stop listening for NFC readers
+  stopListening(): void {
+    console.log(`🔴 Instance #${this.instanceId} - Stopping NFC service`);
+    // NFC cleanup is handled automatically
   }
 }

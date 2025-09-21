@@ -1,85 +1,81 @@
 import { Reader } from 'nfc-pcsc';
 import { PAYMENT, RECIPIENT_ADDRESS, SUPPORTED_CHAINS } from '../config/index.js';
 import { TokenWithPrice } from '../types/index.js';
-import { EthereumService } from './ethereumService.js';
+import { PolkadotService } from './polkadotService.js';
 import { QRCodeService } from './qrCodeService.js';
 import { broadcast } from '../server.js';
 
- * Service for handling payment requests and EIP-681 URI generation
 export class PaymentService {
-   * Get chain name from chain ID for logging
   private static getChainName(chainId: number): string {
     const chain = SUPPORTED_CHAINS.find(c => c.id === chainId);
     return chain ? chain.displayName : `Chain ${chainId}`;
   }
 
-   * Generate EIP-681 format URI for payment request with chain ID support
-  static generateEIP681Uri(amount: bigint, tokenAddress: string, chainId: number): string {
-    const amountString = amount.toString();
+  static generateSubstratePaymentUri(amount: bigint, tokenSymbol: string, chainId: number): string {
+    const chain = SUPPORTED_CHAINS.find(c => c.id === chainId);
+    if (!chain) {
+      throw new Error(`Unsupported chain ID: ${chainId}`);
+    }
+
+    const amountInTokens = Number(amount) / Math.pow(10, chain.nativeToken.decimals);
     
-    if (EthereumService.isEthAddress(tokenAddress)) {
-      return `ethereum:${RECIPIENT_ADDRESS}@${chainId}?value=${amountString}`;
+    if (chainId === 0 || chainId === 2) {
+      return `${RECIPIENT_ADDRESS}?amount=${amountInTokens}&token=${tokenSymbol}`;
     } else {
-      return `ethereum:${tokenAddress}@${chainId}/transfer?address=${RECIPIENT_ADDRESS}&uint256=${amountString}`;
+      return `${RECIPIENT_ADDRESS}?amount=${amountInTokens}&token=${tokenSymbol}&chain=${chain.name}`;
     }
   }
 
-   * Create NDEF URI record for the EIP-681 payment request
-   * This formats the URI so Android will automatically open it with wallet apps
   static createNDEFUriRecord(uri: string): Buffer {
-
     const uriBytes = Buffer.from(uri, 'utf8');
-    
     const uriAbbreviation = 0x00;
-    
-    const recordHeader = 0xD1; // 11010001 binary
-    
+    const recordHeader = 0xD1;
     const typeLength = 0x01;
-    
     const payloadLength = uriBytes.length + 1;
-    
     const recordType = Buffer.from('U', 'ascii');
     
     const ndefMessage = Buffer.concat([
-      Buffer.from([recordHeader]),           // Record header
-      Buffer.from([typeLength]),             // Type length  
-      Buffer.from([payloadLength]),          // Payload length
-      recordType,                            // Type ("U")
-      Buffer.from([uriAbbreviation]),        // URI abbreviation code
-      uriBytes                               // The actual URI
+      Buffer.from([recordHeader]),
+      Buffer.from([typeLength]),
+      Buffer.from([payloadLength]),
+      recordType,
+      Buffer.from([uriAbbreviation]),
+      uriBytes
     ]);
 
     return ndefMessage;
   }
 
-   * Send payment request via NFC using NDEF formatting
-   * This will make Android automatically open the URI with wallet apps
   static async sendPaymentRequest(reader: Reader, amount: bigint, tokenAddress: string, decimals: number, chainId: number): Promise<void> {
     try {
-      const eip681Uri = this.generateEIP681Uri(amount, tokenAddress, chainId);
-      
+      const chain = SUPPORTED_CHAINS.find(c => c.id === chainId);
+      if (!chain) {
+        throw new Error(`Unsupported chain ID: ${chainId}`);
+      }
+
+      const paymentUri = this.generateSubstratePaymentUri(amount, chain.nativeToken.symbol, chainId);
       const chainName = this.getChainName(chainId);
-      console.log(`\n💳 Sending EIP-681 payment request for ${chainName} (Chain ID: ${chainId}):`);
-      console.log(`📄 URI: ${eip681Uri}`);
       
-      const ndefMessage = this.createNDEFUriRecord(eip681Uri);
+      console.log(`\n💳 Sending Polkadot payment request for ${chainName} (Chain ID: ${chainId}):`);
+      console.log(`📄 URI: ${paymentUri}`);
+      
+      const ndefMessage = this.createNDEFUriRecord(paymentUri);
       
       console.log(`📡 NDEF Message (${ndefMessage.length} bytes): ${ndefMessage.toString('hex')}`);
       
       const completeApdu = Buffer.concat([
-        PAYMENT.slice(0, 4),           // Command (80CF0000) 
-        Buffer.from([ndefMessage.length]), // Length of NDEF data
-        ndefMessage                    // NDEF formatted payment request
+        PAYMENT.slice(0, 4),
+        Buffer.from([ndefMessage.length]),
+        ndefMessage
       ]);
       
       console.log(`📡 Sending APDU with NDEF length: ${completeApdu.toString('hex')}`);
-      console.log(`📡 APDU breakdown: Command=${PAYMENT.slice(0,4).toString('hex')} Length=${ndefMessage.length.toString(16).padStart(2,'0')} Data=${ndefMessage.toString('hex')}`);
       
-      const response = await reader.transmit(completeApdu, Math.max(256, ndefMessage.length + 10), {});
+      const response = await reader.transmit(completeApdu, Math.max(256, ndefMessage.length + 10));
       const sw = response.readUInt16BE(response.length - 2);
       
       if (sw === 0x9000) {
-        console.log(`✅ NDEF payment request sent successfully for ${chainName}!`);
+        console.log(`✅ Payment request sent successfully for ${chainName}!`);
         console.log('📱 Wallet app should now open with transaction details...');
         const phoneResponse = response.slice(0, -2).toString();
         if (phoneResponse) {
@@ -104,10 +100,9 @@ export class PaymentService {
     }
   }
 
-   * Calculate payment options and send payment request
   static async calculateAndSendPayment(tokensWithPrices: TokenWithPrice[], reader: Reader, targetUSD: number): Promise<{
     selectedToken: TokenWithPrice;
-    requiredAmount: bigint; // Amount in smallest units as BigInt
+    requiredAmount: bigint;
     chainId: number;
     chainName: string;
   }> {
@@ -124,44 +119,25 @@ export class PaymentService {
     }
 
     console.log(`\n💰 PAYMENT OPTIONS ($${targetUSD}):`);
-    console.log(`🎯 Priority Order: L2 Stablecoin > L2 Other > L2 ETH > L1 Stablecoin > L1 Other > L1 ETH\n`);
+    console.log(`🎯 Priority Order: Relay Chains > Parachains > Native Tokens\n`);
     
-    const L1_CHAINS = [1]; // Ethereum mainnet
-    const L2_CHAINS = [8453, 42161, 10, 137, 393402133025423, 1285, 336, 2, 0]; // Base, Arbitrum, Optimism, Polygon, Starknet, Moonriver, Shiden, Kusama, Polkadot
-    
-    const isStablecoin = (token: TokenWithPrice): boolean => {
-      return /^(USDC|USDT|DAI|BUSD|FRAX|LUSD|USDCE|USDC\.E|USDT\.E|DAI\.E)$/i.test(token.symbol);
-    };
+    const RELAY_CHAINS = [0, 2]; // Polkadot, Kusama
+    const PARACHAINS = [1285, 336]; // Moonriver, Shiden
     
     const categorizeForDisplay = (tokens: TokenWithPrice[]) => {
       const categories = {
-        'L2 Stablecoins (Priority 1)': [] as TokenWithPrice[],
-        'L2 Other Tokens (Priority 2)': [] as TokenWithPrice[],
-        'L2 ETH/Native (Priority 3)': [] as TokenWithPrice[],
-        'L1 Stablecoins (Priority 4)': [] as TokenWithPrice[],
-        'L1 Other Tokens (Priority 5)': [] as TokenWithPrice[],
-        'L1 ETH (Priority 6)': [] as TokenWithPrice[]
+        'Relay Chain Tokens (Priority 1)': [] as TokenWithPrice[],
+        'Parachain Tokens (Priority 2)': [] as TokenWithPrice[],
+        'Other Tokens (Priority 3)': [] as TokenWithPrice[]
       };
       
       tokens.forEach(token => {
-        const isL2 = L2_CHAINS.includes(token.chainId);
-        
-        if (isL2) {
-          if (isStablecoin(token)) {
-            categories['L2 Stablecoins (Priority 1)'].push(token);
-          } else if (token.isNativeToken) {
-            categories['L2 ETH/Native (Priority 3)'].push(token);
-          } else {
-            categories['L2 Other Tokens (Priority 2)'].push(token);
-          }
+        if (RELAY_CHAINS.includes(token.chainId)) {
+          categories['Relay Chain Tokens (Priority 1)'].push(token);
+        } else if (PARACHAINS.includes(token.chainId)) {
+          categories['Parachain Tokens (Priority 2)'].push(token);
         } else {
-          if (isStablecoin(token)) {
-            categories['L1 Stablecoins (Priority 4)'].push(token);
-          } else if (token.isNativeToken) {
-            categories['L1 ETH (Priority 6)'].push(token);
-          } else {
-            categories['L1 Other Tokens (Priority 5)'].push(token);
-          }
+          categories['Other Tokens (Priority 3)'].push(token);
         }
       });
       
@@ -186,7 +162,7 @@ export class PaymentService {
     const selectionTime = Date.now() - startTime;
     console.log(`⏱️ [PROFILE] Token selection and analysis completed in ${selectionTime}ms`);
     
-    const targetUSDCents = Math.round(targetUSD * 1e8); // Convert to 8 decimal precision
+    const targetUSDCents = Math.round(targetUSD * 1e8);
     const priceUSDCents = Math.round(selectedToken.priceUSD * 1e8);
     const requiredAmount = (BigInt(targetUSDCents) * BigInt(10 ** selectedToken.decimals)) / BigInt(priceUSDCents);
     
@@ -206,12 +182,12 @@ export class PaymentService {
     const nfcTransmissionTime = Date.now() - nfcTransmissionStart;
     console.log(`⏱️ [PROFILE] NFC payment request transmission completed in ${nfcTransmissionTime}ms`);
     
-    const eip681Uri = this.generateEIP681Uri(requiredAmount, selectedToken.address, selectedToken.chainId);
-    const qrCodeDataURL = await QRCodeService.generateEIP681QRCode(eip681Uri);
+    const paymentUri = this.generateSubstratePaymentUri(requiredAmount, selectedToken.symbol, selectedToken.chainId);
+    const qrCodeDataURL = await QRCodeService.generateWalletQRCode(paymentUri);
     broadcast({
       type: 'payment_qr',
       data: {
-        uri: eip681Uri,
+        uri: paymentUri,
         qrCodeDataURL,
         amount: Number(requiredAmount) / Math.pow(10, selectedToken.decimals),
         tokenSymbol: selectedToken.symbol,
@@ -229,66 +205,30 @@ export class PaymentService {
     
     return {
       selectedToken,
-      requiredAmount, // BigInt amount in smallest units
+      requiredAmount,
       chainId: selectedToken.chainId,
       chainName: selectedToken.chainDisplayName
     };
   }
 
-   * Smart token selection for payments with L2-first priority
-   * Priority order: L2 Stablecoin > L2 Other > L2 ETH > L1 Stablecoin > L1 Other > L1 ETH
   private static selectBestPaymentToken(viableTokens: TokenWithPrice[]): TokenWithPrice {
-    const L1_CHAINS = [1]; // Ethereum mainnet
-    const L2_CHAINS = [8453, 42161, 10, 137, 393402133025423, 1285, 336, 2, 0]; // Base, Arbitrum, Optimism, Polygon, Starknet, Moonriver, Shiden, Kusama, Polkadot
-    
-    const isStablecoin = (token: TokenWithPrice): boolean => {
-      return /^(USDC|USDT|DAI|BUSD|FRAX|LUSD|USDCE|USDC\.E|USDT\.E|DAI\.E)$/i.test(token.symbol);
-    };
-    
-    const isETH = (token: TokenWithPrice): boolean => {
-      return token.isNativeToken && token.symbol === 'ETH';
-    };
-    
-    const isMATIC = (token: TokenWithPrice): boolean => {
-      return token.isNativeToken && token.symbol === 'MATIC';
-    };
-    
-    const isOther = (token: TokenWithPrice): boolean => {
-      return !isStablecoin(token) && !token.isNativeToken;
-    };
+    const RELAY_CHAINS = [0, 2]; // Polkadot, Kusama
+    const PARACHAINS = [1285, 336]; // Moonriver, Shiden
     
     const categorizeTokens = (tokens: TokenWithPrice[]) => {
       const categories = {
-        l2Stablecoins: [] as TokenWithPrice[],
-        l2Other: [] as TokenWithPrice[],
-        l2ETH: [] as TokenWithPrice[],
-        l2Native: [] as TokenWithPrice[], // For MATIC on Polygon
-        l1Stablecoins: [] as TokenWithPrice[],
-        l1Other: [] as TokenWithPrice[],
-        l1ETH: [] as TokenWithPrice[]
+        relayChain: [] as TokenWithPrice[],
+        parachain: [] as TokenWithPrice[],
+        other: [] as TokenWithPrice[]
       };
       
       tokens.forEach(token => {
-        const isL2 = L2_CHAINS.includes(token.chainId);
-        
-        if (isL2) {
-          if (isStablecoin(token)) {
-            categories.l2Stablecoins.push(token);
-          } else if (isETH(token)) {
-            categories.l2ETH.push(token);
-          } else if (isMATIC(token)) {
-            categories.l2Native.push(token);
-          } else if (isOther(token)) {
-            categories.l2Other.push(token);
-          }
+        if (RELAY_CHAINS.includes(token.chainId)) {
+          categories.relayChain.push(token);
+        } else if (PARACHAINS.includes(token.chainId)) {
+          categories.parachain.push(token);
         } else {
-          if (isStablecoin(token)) {
-            categories.l1Stablecoins.push(token);
-          } else if (isETH(token)) {
-            categories.l1ETH.push(token);
-          } else if (isOther(token)) {
-            categories.l1Other.push(token);
-          }
+          categories.other.push(token);
         }
       });
       
@@ -298,12 +238,9 @@ export class PaymentService {
     const categories = categorizeTokens(viableTokens);
     
     console.log(`\n🧮 TOKEN SELECTION ANALYSIS:`);
-    console.log(`   L2 Stablecoins: ${categories.l2Stablecoins.length} tokens`);
-    console.log(`   L2 Other Tokens: ${categories.l2Other.length} tokens`);
-    console.log(`   L2 ETH/Native: ${categories.l2ETH.length + categories.l2Native.length} tokens`);
-    console.log(`   L1 Stablecoins: ${categories.l1Stablecoins.length} tokens`);
-    console.log(`   L1 Other Tokens: ${categories.l1Other.length} tokens`);
-    console.log(`   L1 ETH: ${categories.l1ETH.length} tokens`);
+    console.log(`   Relay Chain Tokens: ${categories.relayChain.length} tokens`);
+    console.log(`   Parachain Tokens: ${categories.parachain.length} tokens`);
+    console.log(`   Other Tokens: ${categories.other.length} tokens`);
     
     const sortByValue = (a: TokenWithPrice, b: TokenWithPrice) => b.valueUSD - a.valueUSD;
     
@@ -311,49 +248,25 @@ export class PaymentService {
       category.sort(sortByValue);
     });
     
-    if (categories.l2Stablecoins.length > 0) {
-      const selected = categories.l2Stablecoins[0];
-      console.log(`💡 Preferred payment: L2 Stablecoin - ${selected.symbol} on ${selected.chainDisplayName}`);
+    if (categories.relayChain.length > 0) {
+      const selected = categories.relayChain[0];
+      console.log(`💡 Preferred payment: Relay Chain - ${selected.symbol} on ${selected.chainDisplayName}`);
       return selected;
     }
     
-    if (categories.l2Other.length > 0) {
-      const selected = categories.l2Other[0];
-      console.log(`💡 Preferred payment: L2 Other Token - ${selected.symbol} on ${selected.chainDisplayName}`);
+    if (categories.parachain.length > 0) {
+      const selected = categories.parachain[0];
+      console.log(`💡 Preferred payment: Parachain - ${selected.symbol} on ${selected.chainDisplayName}`);
       return selected;
     }
     
-    if (categories.l2ETH.length > 0) {
-      const selected = categories.l2ETH[0];
-      console.log(`💡 Preferred payment: L2 ETH - ${selected.symbol} on ${selected.chainDisplayName}`);
-      return selected;
-    }
-    
-    if (categories.l2Native.length > 0) {
-      const selected = categories.l2Native[0];
-      console.log(`💡 Preferred payment: L2 Native Token - ${selected.symbol} on ${selected.chainDisplayName}`);
-      return selected;
-    }
-    
-    if (categories.l1Stablecoins.length > 0) {
-      const selected = categories.l1Stablecoins[0];
-      console.log(`💡 Preferred payment: L1 Stablecoin - ${selected.symbol} on ${selected.chainDisplayName}`);
-      return selected;
-    }
-    
-    if (categories.l1Other.length > 0) {
-      const selected = categories.l1Other[0];
-      console.log(`💡 Preferred payment: L1 Other Token - ${selected.symbol} on ${selected.chainDisplayName}`);
-      return selected;
-    }
-    
-    if (categories.l1ETH.length > 0) {
-      const selected = categories.l1ETH[0];
-      console.log(`💡 Preferred payment: L1 ETH - ${selected.symbol} on ${selected.chainDisplayName}`);
+    if (categories.other.length > 0) {
+      const selected = categories.other[0];
+      console.log(`💡 Preferred payment: Other - ${selected.symbol} on ${selected.chainDisplayName}`);
       return selected;
     }
     
     console.log(`💡 Fallback: Using first available token - ${viableTokens[0].symbol}`);
     return viableTokens[0];
   }
-} 
+}

@@ -1,7 +1,9 @@
 import { NFCService } from './services/nfcService.js';
 import { PriceCacheService } from './services/priceCacheService.js';
+import { PolkadotService } from './services/polkadotService.js';
+import { logger } from './utils/logger.js';
 
- * Main application orchestrator
+// Main application orchestrator
 export class App {
   private nfcService: NFCService;
 
@@ -9,53 +11,57 @@ export class App {
     this.nfcService = new NFCService(); 
 }
 
-   * Initialize core services like price caching and start NFC listeners.
+  // Initialize core services like price caching and start NFC listeners.
   async initializeServices(): Promise<void> {
-    console.log('🚀 Initializing App Services...');
+    logger.info('Initializing App Services...');
+    await PolkadotService.initialize();
     await PriceCacheService.initialize();
-    this.nfcService.startListening(); // Renamed from start() for clarity
+    this.nfcService.startListening();
+    logger.info('App Services initialized successfully');
   }
 
-   * Process a payment request for a given amount.
-   * This will arm the NFC service to expect a tap.
-   * @param amount The amount to charge in USD.
-   * @returns Promise resolving with payment result.
+  // Process a payment request for a given amount.
+  // This will arm the NFC service to expect a tap.
+  // @param amount The amount to charge in USD.
+  // @returns Promise resolving with payment result.
   async processPayment(amount: number): Promise<{ success: boolean; message: string; errorType?: string; paymentInfo?: any }> {
     if (!this.nfcService) {
-        console.error('NFC Service not initialized in App!');
+        logger.error('NFC Service not initialized in App!');
         return { success: false, message: 'NFC Service not ready', errorType: 'NFC_SERVICE_ERROR' };
         }
-    console.log(`App: Processing payment for $${amount}`);
+    logger.business('Processing payment request', { amount: amount });
     return this.nfcService.armForPaymentAndAwaitTap(amount);
   }
 
-   * Scan an NFC device to get wallet address for transaction history filtering.
-   * @returns Promise resolving with scan result containing wallet address.
+  // Scan an NFC device to get wallet address for transaction history filtering.
+  // @returns Promise resolving with scan result containing wallet address.
   async scanWalletAddress(): Promise<{ success: boolean; message: string; address?: string; errorType?: string }> {
     if (!this.nfcService) {
-        console.error('NFC Service not initialized in App!');
+        logger.error('NFC Service not initialized in App!');
         return { success: false, message: 'NFC Service not ready', errorType: 'NFC_SERVICE_ERROR' };
     }
-    console.log('App: Starting wallet address scan');
+    logger.business('Starting wallet address scan', {});
     return this.nfcService.scanForWalletAddress();
   }
 
-   * Cancel any ongoing NFC operations (payment or wallet scan).
+  // Cancel any ongoing NFC operations (payment or wallet scan).
   cancelCurrentOperation(): void {
     if (!this.nfcService) {
-        console.error('NFC Service not initialized in App!');
+        logger.error('NFC Service not initialized in App!');
         return;
     }
-    console.log('App: Cancelling current NFC operation');
+    logger.business('Cancelling current NFC operation', {});
     this.nfcService.cancelCurrentOperation();
   }
 
-   * Stop core services gracefully.
-  stopServices(): void {
-    console.log('🛑 Stopping App Services...');
+  // Stop core services gracefully.
+  async stopServices(): Promise<void> {
+    logger.info('Stopping App Services...');
+    await PolkadotService.disconnect();
     PriceCacheService.stop();
     if (this.nfcService) {
-        this.nfcService.stopListening(); // NFCService would need this method
+        this.nfcService.stopListening();
     }
+    logger.info('App Services stopped successfully');
   }
 } 

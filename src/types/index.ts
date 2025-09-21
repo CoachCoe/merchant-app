@@ -20,16 +20,6 @@ export interface TokenWithPrice {
   isNativeToken: boolean;
 }
 
-export interface AlchemyTokenBalance {
-  contractAddress: string;
-  tokenBalance: string;
-}
-
-export interface AlchemyTokenMetadata {
-  decimals: number;
-  symbol: string;
-  name: string;
-}
 
 export interface ChainBalances {
   chainId: number;

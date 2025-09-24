@@ -22,6 +22,11 @@ import {
 import { validatePaymentRequest } from './utils/validation.js';
 import { logger } from './utils/logger.js';
 import { paymentRequestSchema, qrCodeRequestSchema } from './config/validation.js';
+import { DatabaseService } from './services/databaseService.js';
+import { productRoutes } from './routes/products.js';
+import { categoryRoutes } from './routes/categories.js';
+import { cartRoutes } from './routes/cart.js';
+import { orderRoutes } from './routes/orders.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -64,9 +69,17 @@ const paymentRateLimit = createRateLimit(5 * 60 * 1000, 10, 'Too many payment re
 
 expressApp.use(generalRateLimit);
 
+// Serve static files - prioritize React build, fallback to simple web interface
+const reactBuildDir = path.join(__dirname, '..');
 const webDir = path.join(__dirname, 'web');
-expressApp.use(express.static(webDir));
-logger.info(`Serving static files from: ${webDir}`);
+
+// Serve React build files
+expressApp.use(express.static(reactBuildDir));
+logger.info(`Serving React build files from: ${reactBuildDir}`);
+
+// Fallback to simple web interface for backward compatibility
+expressApp.use('/legacy', express.static(webDir));
+logger.info(`Legacy web interface available at: /legacy`);
 
 interface PaymentSession {
     amount: number;
@@ -476,6 +489,12 @@ const getSupportedChainsHandler: AsyncRequestHandler = async (req, res) => {
     });
 };
 
+// E-commerce API routes
+expressApp.use('/api/products', productRoutes);
+expressApp.use('/api/categories', categoryRoutes);
+expressApp.use('/api/cart', cartRoutes);
+expressApp.use('/api/orders', orderRoutes);
+
 // Routes with validation and rate limiting
 expressApp.post('/initiate-payment', 
     paymentRateLimit,
@@ -503,6 +522,24 @@ expressApp.get('/health', (req, res) => {
     });
 });
 
+// SPA fallback for React Router (must be before error handlers)
+expressApp.get('*', (req, res) => {
+  // Don't serve React app for API routes
+  if (req.path.startsWith('/api/') || 
+      req.path.startsWith('/initiate-payment') ||
+      req.path.startsWith('/scan-wallet') ||
+      req.path.startsWith('/cancel-payment') ||
+      req.path.startsWith('/generate-qr') ||
+      req.path.startsWith('/transaction-history') ||
+      req.path.startsWith('/supported-chains') ||
+      req.path.startsWith('/health')) {
+    return notFoundHandler(req, res);
+  }
+  
+  // Serve React app for all other routes
+  res.sendFile(path.join(__dirname, '..', 'index.html'));
+});
+
 // Error handling middleware (must be last)
 expressApp.use(notFoundHandler);
 expressApp.use(errorHandler);
@@ -512,6 +549,11 @@ async function startServerAndApp() {
         logger.info('Starting Polkadot Payment Terminal...');
         
         try {
+            // Initialize database service
+            logger.info('Initializing database service...');
+            DatabaseService.getInstance();
+            logger.info('Database service initialized');
+            
             // PolkadotService is initialized in App.initializeServices()
             logger.info('PolkadotService will be initialized with App services');
 
@@ -565,6 +607,11 @@ function shutdown(signal: string) {
             // Stop application services
             nfcApp.stopServices().then(() => {
                 logger.info('Application services stopped');
+                
+                // Close database connection
+                DatabaseService.getInstance().close();
+                logger.info('Database connection closed');
+                
                 process.exit(0);
             }).catch(err => {
                 logger.error('Error stopping app services', err);

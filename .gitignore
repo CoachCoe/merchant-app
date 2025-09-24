@@ -8,3 +8,4 @@ build/
 *.img
 *.img.gz
 .DS_Store
+data/*.db*

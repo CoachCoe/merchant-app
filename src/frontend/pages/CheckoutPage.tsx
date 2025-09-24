@@ -81,7 +81,7 @@ const CheckoutPage: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           amount: cart.total / 100, // Convert cents to dollars
-          merchantAddress: 'EUfWfTP84xqpnd8GUpUAGWrvP7M6cHNJ2QT37RRYyEbWpei' // Your merchant address
+          merchantAddress: process.env.REACT_APP_MERCHANT_ADDRESS || 'EUfWfTP84xqpnd8GUpUAGWrvP7M6cHNJ2QT37RRYyEbWpei'
         })
       });
 

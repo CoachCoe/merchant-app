@@ -5,6 +5,7 @@ import WebSocket, { WebSocketServer } from 'ws';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import { App } from './app.js';
 import { PolkadotService } from './services/polkadotService.js';
 import { SUPPORTED_CHAINS, ChainConfig } from './config/index.js';
@@ -27,6 +28,7 @@ import { productRoutes } from './routes/products.js';
 import { categoryRoutes } from './routes/categories.js';
 import { cartRoutes } from './routes/cart.js';
 import { orderRoutes } from './routes/orders.js';
+import { APP_CONFIG } from './config/constants.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -60,6 +62,7 @@ const nfcApp = new App();
 expressApp.use(securityHeaders);
 expressApp.use(cors(corsOptions));
 expressApp.use(requestIdMiddleware);
+expressApp.use(cookieParser());
 expressApp.use(express.json({ limit: '10mb' }));
 expressApp.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
@@ -489,11 +492,23 @@ const getSupportedChainsHandler: AsyncRequestHandler = async (req, res) => {
     });
 };
 
-// E-commerce API routes
-expressApp.use('/api/products', productRoutes);
-expressApp.use('/api/categories', categoryRoutes);
-expressApp.use('/api/cart', cartRoutes);
-expressApp.use('/api/orders', orderRoutes);
+// E-commerce API routes with rate limiting
+expressApp.use('/api/products', 
+  createRateLimit(APP_CONFIG.RATE_LIMIT.WINDOW_MS, APP_CONFIG.RATE_LIMIT.MAX_REQUESTS.GENERAL, 'Too many product requests'),
+  productRoutes
+);
+expressApp.use('/api/categories', 
+  createRateLimit(APP_CONFIG.RATE_LIMIT.WINDOW_MS, APP_CONFIG.RATE_LIMIT.MAX_REQUESTS.GENERAL, 'Too many category requests'),
+  categoryRoutes
+);
+expressApp.use('/api/cart', 
+  createRateLimit(APP_CONFIG.RATE_LIMIT.WINDOW_MS, APP_CONFIG.RATE_LIMIT.MAX_REQUESTS.GENERAL, 'Too many cart requests'),
+  cartRoutes
+);
+expressApp.use('/api/orders', 
+  createRateLimit(APP_CONFIG.RATE_LIMIT.WINDOW_MS, APP_CONFIG.RATE_LIMIT.MAX_REQUESTS.PAYMENT, 'Too many order requests'),
+  orderRoutes
+);
 
 // Routes with validation and rate limiting
 expressApp.post('/initiate-payment', 

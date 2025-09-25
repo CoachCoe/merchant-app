@@ -1,8 +1,18 @@
-# 🛒 Crypto Merchant Store
+# 🌐 Web3 Anonymous Marketplace
 
-A full-featured e-commerce web application that accepts cryptocurrency payments through the Polkadot ecosystem. Built with React, Express.js, and integrated with NFC payment processing for seamless crypto transactions.
+A comprehensive Web3 marketplace that enables anonymous buying and selling using cryptocurrency payments through the Polkadot ecosystem. Built with React, Express.js, and integrated with NFC payment processing for seamless crypto transactions.
 
 ## ✨ Features
+
+### 🌐 **Web3 Marketplace Platform**
+- **Anonymous Trading** - Buy and sell without revealing identity
+- **Advanced Search** - Multi-criteria product discovery with filters
+- **Seller Reputation** - Blockchain-based trust scoring system
+- **Escrow Protection** - Multi-signature escrow for secure transactions
+- **Dispute Resolution** - Automated and manual dispute handling
+- **Category Browsing** - Organized product categories with carousel navigation
+- **Trending Products** - Popular and featured item discovery
+- **Seller Spotlight** - Top seller and new seller showcases
 
 ### 🛍️ **E-commerce Platform**
 - **Product Catalog** - Browse and filter products by category
@@ -20,11 +30,14 @@ A full-featured e-commerce web application that accepts cryptocurrency payments 
 - **Smart Token Selection** - Automatic optimal payment token selection
 
 ### 🔒 **Enterprise Security**
+- **Anonymous User System** - Privacy-preserving user management
 - **Secure Session Management** - Crypto-generated session IDs
 - **Input Validation** - Comprehensive Zod schemas preventing XSS/injection
 - **Rate Limiting** - DDoS protection with configurable limits
 - **Admin Authentication** - Protected admin endpoints with audit logging
 - **CORS Security** - Production-ready CORS configuration
+- **Escrow Security** - Multi-signature wallet protection for transactions
+- **Reputation System** - Blockchain-based trust and verification
 
 ## 🌐 Supported Networks
 
@@ -223,6 +236,21 @@ cp build-config.env.template build-config.env
 - `GET /transaction-history` - Get transaction history
 - `POST /scan-wallet` - Scan wallet for history
 
+### **Marketplace (Web3)**
+- `GET /api/marketplace/products` - List marketplace products with advanced filtering
+- `GET /api/marketplace/products/:id` - Get marketplace product details
+- `POST /api/marketplace/products` - Create marketplace product listing
+- `PUT /api/marketplace/products/:id` - Update marketplace product
+- `DELETE /api/marketplace/products/:id` - Delete marketplace product
+- `GET /api/marketplace/users` - Get anonymous user profile
+- `POST /api/marketplace/users` - Create anonymous user
+- `PUT /api/marketplace/users/:id` - Update user reputation
+- `GET /api/marketplace/transactions` - List user transactions
+- `POST /api/marketplace/transactions` - Create escrow transaction
+- `PUT /api/marketplace/transactions/:id` - Update transaction status
+- `POST /api/marketplace/transactions/:id/dispute` - Raise dispute
+- `POST /api/marketplace/transactions/:id/refund` - Process refund
+
 ## 🛠️ Development
 
 ### **Available Scripts**
@@ -257,11 +285,20 @@ NODE_ENV=development
 ## 📊 Database Schema
 
 The application uses SQLite with the following tables:
+
+### **E-commerce Tables**
 - **categories** - Product categories
 - **products** - Product catalog
 - **carts** - Shopping cart sessions
 - **cart_items** - Individual cart items
 - **orders** - Order records with payment status
+
+### **Marketplace Tables**
+- **anonymous_users** - Anonymous user profiles with reputation
+- **reputation_events** - User reputation change history
+- **marketplace_products** - Web3 marketplace product listings
+- **marketplace_transactions** - Escrow-based transactions
+- **escrow_contracts** - Multi-signature escrow contract tracking
 
 ## 🤝 Contributing
 

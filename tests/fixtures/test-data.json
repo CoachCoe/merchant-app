@@ -1,0 +1,75 @@
+{
+  "products": [
+    {
+      "id": "test-product-1",
+      "name": "Test Product 1",
+      "description": "A test product for unit testing",
+      "price": 1999,
+      "image": "https://example.com/image1.jpg",
+      "category": "test-category-1",
+      "isActive": true
+    },
+    {
+      "id": "test-product-2",
+      "name": "Test Product 2",
+      "description": "Another test product",
+      "price": 2999,
+      "image": "https://example.com/image2.jpg",
+      "category": "test-category-2",
+      "isActive": true
+    }
+  ],
+  "categories": [
+    {
+      "id": "test-category-1",
+      "name": "Test Category 1",
+      "description": "A test category",
+      "sortOrder": 1,
+      "isActive": true
+    },
+    {
+      "id": "test-category-2",
+      "name": "Test Category 2",
+      "description": "Another test category",
+      "sortOrder": 2,
+      "isActive": true
+    }
+  ],
+  "users": [
+    {
+      "id": "test-user-1",
+      "tempId": "temp-session-123",
+      "walletAddress": "EUfWfTP84xqpnd8GUpUAGWrvP7M6cHNJ2QT37RRYyEbWpei",
+      "reputation": 85,
+      "isVerified": true,
+      "totalTransactions": 10,
+      "successfulTransactions": 9,
+      "disputeCount": 1
+    }
+  ],
+  "marketplaceProducts": [
+    {
+      "id": "ipfs-hash-123",
+      "title": "Test Marketplace Product",
+      "description": "A test marketplace product",
+      "images": ["ipfs://QmTestHash1", "ipfs://QmTestHash2"],
+      "priceAmount": "1000000000000000000",
+      "priceCurrency": "DOT",
+      "sellerAnonymousId": "test-user-1",
+      "category": "digital-art",
+      "condition": "new",
+      "availability": "available",
+      "ipfsMetadata": "ipfs://QmMetadataHash"
+    }
+  ],
+  "transactions": [
+    {
+      "id": "test-transaction-1",
+      "productId": "ipfs-hash-123",
+      "buyerWalletAddress": "EUfWfTP84xqpnd8GUpUAGWrvP7M6cHNJ2QT37RRYyEbWpei",
+      "deliveryMethod": "digital",
+      "digitalDeliveryInfo": "test@example.com",
+      "status": "pending"
+    }
+  ]
+}

@@ -21,6 +21,9 @@ const Header: React.FC = () => {
             <Link to="/" style={{ color: 'white', textDecoration: 'none', fontWeight: '500' }}>
               Products
             </Link>
+            <Link to="/marketplace" style={{ color: 'white', textDecoration: 'none', fontWeight: '500' }}>
+              🌐 Marketplace
+            </Link>
             <Link 
               to="/cart" 
               style={{ 

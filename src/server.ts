@@ -24,10 +24,12 @@ import { validatePaymentRequest } from './utils/validation.js';
 import { logger } from './utils/logger.js';
 import { paymentRequestSchema, qrCodeRequestSchema } from './config/validation.js';
 import { DatabaseService } from './services/databaseService.js';
+import { MarketplaceDatabaseService } from './services/marketplaceDatabaseService.js';
 import { productRoutes } from './routes/products.js';
 import { categoryRoutes } from './routes/categories.js';
 import { cartRoutes } from './routes/cart.js';
 import { orderRoutes } from './routes/orders.js';
+import marketplaceRoutes from './routes/marketplace.js';
 import { APP_CONFIG } from './config/constants.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -510,6 +512,12 @@ expressApp.use('/api/orders',
   orderRoutes
 );
 
+// Marketplace API routes with rate limiting
+expressApp.use('/api/marketplace', 
+  createRateLimit(APP_CONFIG.RATE_LIMIT.WINDOW_MS, APP_CONFIG.RATE_LIMIT.MAX_REQUESTS.GENERAL, 'Too many marketplace requests'),
+  marketplaceRoutes
+);
+
 // Routes with validation and rate limiting
 expressApp.post('/initiate-payment', 
     paymentRateLimit,
@@ -568,6 +576,12 @@ async function startServerAndApp() {
             logger.info('Initializing database service...');
             DatabaseService.getInstance();
             logger.info('Database service initialized');
+            
+            // Initialize marketplace database service
+            logger.info('Initializing marketplace database service...');
+            const marketplaceDb = MarketplaceDatabaseService.getInstance();
+            marketplaceDb.migrateToMarketplace();
+            logger.info('Marketplace database service initialized');
             
             // PolkadotService is initialized in App.initializeServices()
             logger.info('PolkadotService will be initialized with App services');

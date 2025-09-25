@@ -114,5 +114,5 @@ export const sanitizeHtml = (html: string): string => {
 
 // Validation error formatter
 export const formatValidationError = (error: z.ZodError): string => {
-  return error.errors.map(err => `${err.path.join('.')}: ${err.message}`).join(', ');
+  return error.issues.map((err: any) => `${err.path.join('.')}: ${err.message}`).join(', ');
 };

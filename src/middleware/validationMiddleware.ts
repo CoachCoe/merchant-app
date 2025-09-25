@@ -24,7 +24,7 @@ export class ValidationMiddleware {
           res.status(400).json({
             success: false,
             message: 'Validation error',
-            errors: error.errors.map(err => ({
+            errors: error.issues.map((err: any) => ({
               field: err.path.join('.'),
               message: err.message
             }))
@@ -47,7 +47,7 @@ export class ValidationMiddleware {
   public validateParams = (schema: ZodSchema) => {
     return (req: Request, res: Response, next: NextFunction): void => {
       try {
-        req.params = schema.parse(req.params);
+        req.params = schema.parse(req.params) as any;
         next();
       } catch (error) {
         if (error instanceof z.ZodError) {
@@ -61,7 +61,7 @@ export class ValidationMiddleware {
           res.status(400).json({
             success: false,
             message: 'Invalid parameters',
-            errors: error.errors.map(err => ({
+            errors: error.issues.map((err: any) => ({
               field: err.path.join('.'),
               message: err.message
             }))
@@ -84,7 +84,7 @@ export class ValidationMiddleware {
   public validateQuery = (schema: ZodSchema) => {
     return (req: Request, res: Response, next: NextFunction): void => {
       try {
-        req.query = schema.parse(req.query);
+        req.query = schema.parse(req.query) as any;
         next();
       } catch (error) {
         if (error instanceof z.ZodError) {
@@ -98,7 +98,7 @@ export class ValidationMiddleware {
           res.status(400).json({
             success: false,
             message: 'Invalid query parameters',
-            errors: error.errors.map(err => ({
+            errors: error.issues.map((err: any) => ({
               field: err.path.join('.'),
               message: err.message
             }))

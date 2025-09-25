@@ -1,7 +1,6 @@
 import { Reader } from 'nfc-pcsc';
 import { PAYMENT, RECIPIENT_ADDRESS, SUPPORTED_CHAINS } from '../config/index.js';
 import { TokenWithPrice } from '../types/index.js';
-import { PolkadotService } from './polkadotService.js';
 import { QRCodeService } from './qrCodeService.js';
 import { broadcast } from '../server.js';
 

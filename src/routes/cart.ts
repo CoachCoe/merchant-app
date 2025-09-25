@@ -3,11 +3,10 @@ import { CartService } from '../services/cartService.js';
 import { logger } from '../utils/logger.js';
 import { sessionMiddleware } from '../middleware/sessionMiddleware.js';
 import { validationMiddleware } from '../middleware/validationMiddleware.js';
-import { 
-  addToCartSchema, 
-  updateCartItemSchema, 
-  cartItemIdSchema,
-  paginationSchema 
+import {
+  addToCartSchema,
+  updateCartItemSchema,
+  cartItemIdSchema
 } from '../validation/schemas.js';
 
 const router = Router();

@@ -1,5 +1,4 @@
 import { Request } from 'express';
-import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
 import { logger } from '../utils/logger.js';
 
@@ -58,7 +57,7 @@ export class SessionService {
     this.sessions.set(sessionId, sessionData);
     
     logger.info('Session created', { 
-      sessionId: sessionId.substring(0, 8) + '...',
+      sessionId: `${sessionId.substring(0, 8)  }...`,
       userId,
       isAdmin,
       ipAddress: sessionData.ipAddress
@@ -81,7 +80,7 @@ export class SessionService {
     const now = new Date();
     if (now.getTime() - session.lastAccessed.getTime() > this.SESSION_TIMEOUT) {
       this.sessions.delete(sessionId);
-      logger.info('Session expired', { sessionId: sessionId.substring(0, 8) + '...' });
+      logger.info('Session expired', { sessionId: `${sessionId.substring(0, 8)  }...` });
       return null;
     }
 
@@ -110,7 +109,7 @@ export class SessionService {
     const currentIP = this.getClientIP(req);
     if (process.env.STRICT_IP_VALIDATION === 'true' && session.ipAddress !== currentIP) {
       logger.security('Session IP mismatch', { 
-        sessionId: sessionId.substring(0, 8) + '...',
+        sessionId: `${sessionId.substring(0, 8)  }...`,
         expectedIP: session.ipAddress,
         actualIP: currentIP
       });
@@ -127,7 +126,7 @@ export class SessionService {
   public destroySession(sessionId: string): boolean {
     const deleted = this.sessions.delete(sessionId);
     if (deleted) {
-      logger.info('Session destroyed', { sessionId: sessionId.substring(0, 8) + '...' });
+      logger.info('Session destroyed', { sessionId: `${sessionId.substring(0, 8)  }...` });
     }
     return deleted;
   }

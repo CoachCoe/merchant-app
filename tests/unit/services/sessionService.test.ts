@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
-import { SessionService, SessionData } from '../../../src/services/sessionService.js';
+import { SessionService } from '../../../src/services/sessionService.js';
 import { Request } from 'express';
 
 // Mock the logger

@@ -77,7 +77,7 @@ export const validateTxHash = (txHash: string): boolean => {
 
 // Sanitize string input
 export const sanitizeString = (input: string): string => {
-  return input.trim().replace(/[<>\"'&]/g, '');
+  return input.trim().replace(/[<>"'&]/g, '');
 };
 
 // Validate and sanitize merchant address

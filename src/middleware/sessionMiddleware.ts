@@ -28,7 +28,7 @@ export class SessionMiddleware {
       if (session) {
         req.session = session;
         logger.debug('Session validated', { 
-          sessionId: session.sessionId.substring(0, 8) + '...',
+          sessionId: `${session.sessionId.substring(0, 8)  }...`,
           userId: session.userId,
           isAdmin: session.isAdmin
         });
@@ -46,7 +46,7 @@ export class SessionMiddleware {
         });
 
         logger.debug('Anonymous session created', { 
-          sessionId: sessionId.substring(0, 8) + '...'
+          sessionId: `${sessionId.substring(0, 8)  }...`
         });
       }
 
@@ -81,7 +81,7 @@ export class SessionMiddleware {
   public requireAdmin = (req: Request, res: Response, next: NextFunction): void => {
     if (!req.session || !req.session.isAdmin) {
       logger.security('Unauthorized admin access attempt', {
-        sessionId: req.session?.sessionId?.substring(0, 8) + '...',
+        sessionId: `${req.session?.sessionId?.substring(0, 8)  }...`,
         ipAddress: req.ip,
         userAgent: req.get('User-Agent')
       });
@@ -105,7 +105,7 @@ export class SessionMiddleware {
         logger.info('Admin action', {
           action,
           adminId: req.session.userId,
-          sessionId: req.session.sessionId.substring(0, 8) + '...',
+          sessionId: `${req.session.sessionId.substring(0, 8)  }...`,
           ipAddress: req.ip,
           userAgent: req.get('User-Agent')
         });

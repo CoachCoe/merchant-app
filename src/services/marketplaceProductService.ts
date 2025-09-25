@@ -634,7 +634,7 @@ export class MarketplaceProductService {
   /**
    * Generate IPFS hash (placeholder)
    */
-  private async generateIPFSHash(product: CreateMarketplaceProductRequest): Promise<string> {
+  private async generateIPFSHash(_product: CreateMarketplaceProductRequest): Promise<string> {
     // This would integrate with IPFS service
     // For now, return a placeholder hash
     return `Qm${Math.random().toString(36).substr(2, 44)}`;

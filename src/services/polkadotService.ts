@@ -55,22 +55,22 @@ export class PolkadotService {
     return tokens;
   }
 
-  static async getCurrentBlock(chainId: number): Promise<number> {
+  static async getCurrentBlock(_chainId: number): Promise<number> {
     // Mock current block
     return 1000000;
   }
 
-  static async getBlockHash(chainId: number, blockNumber: number): Promise<string> {
+  static async getBlockHash(_chainId: number, _blockNumber: number): Promise<string> {
     // Mock block hash
     return `0x${Math.random().toString(16).substr(2, 64)}`;
   }
 
-  static async getBlock(chainId: number, blockNumber: number) {
+  static async getBlock(_chainId: number, _blockNumber: number) {
     // Mock block
     return {
       block: {
         header: {
-          number: { toNumber: () => blockNumber }
+          number: { toNumber: () => _blockNumber }
         }
       }
     };

@@ -29,7 +29,7 @@ export class App {
         logger.error('NFC Service not initialized in App!');
         return { success: false, message: 'NFC Service not ready', errorType: 'NFC_SERVICE_ERROR' };
         }
-    logger.business('Processing payment request', { amount: amount });
+    logger.business('Processing payment request', { amount });
     return this.nfcService.armForPaymentAndAwaitTap(amount);
   }
 

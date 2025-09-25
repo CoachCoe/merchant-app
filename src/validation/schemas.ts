@@ -2,7 +2,6 @@ import { z } from 'zod';
 
 // Common validation patterns
 const uuidSchema = z.string().uuid();
-const positiveIntegerSchema = z.number().int().positive();
 const nonEmptyStringSchema = z.string().min(1).max(255);
 const emailSchema = z.string().email().max(255);
 const urlSchema = z.string().url().max(500);

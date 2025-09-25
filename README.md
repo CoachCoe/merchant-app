@@ -1,6 +1,30 @@
-# Polkadot NFC Payment Terminal
+# 🛒 Crypto Merchant Store
 
-A Polkadot ecosystem NFC payment terminal that processes cryptocurrency payments across Polkadot and Kusama networks with real-time transaction monitoring and comprehensive history tracking.
+A full-featured e-commerce web application that accepts cryptocurrency payments through the Polkadot ecosystem. Built with React, Express.js, and integrated with NFC payment processing for seamless crypto transactions.
+
+## ✨ Features
+
+### 🛍️ **E-commerce Platform**
+- **Product Catalog** - Browse and filter products by category
+- **Shopping Cart** - Add, update, and manage cart items
+- **Order Management** - Complete order lifecycle with crypto payments
+- **Admin Dashboard** - Manage products, categories, and orders
+- **Responsive Design** - Works on mobile, tablet, and desktop
+- **PWA Ready** - Can be installed as a mobile app
+
+### 💳 **Crypto Payment Integration**
+- **Multi-Chain Support** - DOT, KSM, MOVR, SDN tokens
+- **NFC Payments** - Tap-to-pay with NFC-enabled wallets
+- **QR Code Payments** - Scan QR codes for wallet payments
+- **Real-time Monitoring** - Live transaction status updates
+- **Smart Token Selection** - Automatic optimal payment token selection
+
+### 🔒 **Enterprise Security**
+- **Secure Session Management** - Crypto-generated session IDs
+- **Input Validation** - Comprehensive Zod schemas preventing XSS/injection
+- **Rate Limiting** - DDoS protection with configurable limits
+- **Admin Authentication** - Protected admin endpoints with audit logging
+- **CORS Security** - Production-ready CORS configuration
 
 ## 🌐 Supported Networks
 
@@ -11,15 +35,17 @@ A Polkadot ecosystem NFC payment terminal that processes cryptocurrency payments
 
 ### 🎯 **Smart Payment Priority**
 
-Rather than negotiate a chain / token combo with the merchant, the payment terminal handles it automatically. First it figures out a chain the merchant supports that you also have funds on, then sends a transaction with native tokens using this priority:
+The system automatically selects the optimal payment token using this priority:
 
 ```
 Relay Chain Tokens > Parachain Tokens > Other Tokens
 ```
 
-**Note:** The terminal prioritizes Polkadot and Kusama relay chain tokens (DOT, KSM) over parachain tokens (MOVR, SDN) for optimal security and finality.
+**Note:** Prioritizes Polkadot and Kusama relay chain tokens (DOT, KSM) over parachain tokens (MOVR, SDN) for optimal security and finality.
 
 ## 🚀 Quick Start
+
+### **Development Setup**
 
 1. **Install dependencies:**
    ```bash
@@ -28,62 +54,100 @@ Relay Chain Tokens > Parachain Tokens > Other Tokens
 
 2. **Environment setup:**
    ```bash
-   # No API key required - uses public RPC endpoints
+   # Create environment file (optional - uses defaults)
    touch .env
    ```
 
-3. **Run the terminal:**
+3. **Start development servers:**
    ```bash
-   npm start
+   npm run dev
    ```
 
-4. **Open the interface:**
-   Navigate to `http://localhost:3000`
+4. **Access the application:**
+   - **Frontend**: http://localhost:3001 (React app)
+   - **Backend**: http://localhost:3000 (API server)
+
+### **Production Build**
+
+```bash
+# Build both frontend and backend
+npm run build
+
+# Start production server
+npm start
+```
 
 ## 🏗️ Architecture
 
 ```
 src/
-├── server.ts                   # Express server & WebSocket handler
-├── app.ts                     # Main application orchestrator
-├── web/index.html             # Payment terminal UI
-├── config/index.ts            # Polkadot chain configuration
-└── services/
-    ├── nfcService.ts          # NFC reader & wallet scanning
-    ├── polkadotService.ts     # Polkadot balance & monitoring
-    ├── paymentService.ts      # Payment selection & QR generation
-    ├── polkadotPriceService.ts # Price fetching for Polkadot tokens
-    └── addressProcessor.ts    # Duplicate processing prevention
-scripts/
-└── rpi-deploy/
-    ├── setup-build-environment.sh  # Install dependencies to allow building a Raspberry Pi image
-    └── build-pi-image-osx.sh       # Build a Raspberry Pi image
+├── server.ts                    # Express server & WebSocket handler
+├── app.ts                      # Main application orchestrator
+├── config/
+│   ├── constants.ts            # Application configuration
+│   └── index.ts               # Polkadot chain configuration
+├── frontend/                   # React frontend application
+│   ├── components/            # Reusable UI components
+│   ├── pages/                # Page components
+│   ├── hooks/                # Custom React hooks
+│   └── public/               # Static assets
+├── middleware/                # Express middleware
+│   ├── sessionMiddleware.ts   # Session management
+│   └── validationMiddleware.ts # Input validation
+├── models/                    # TypeScript data models
+├── routes/                    # API route handlers
+├── services/                  # Business logic services
+│   ├── databaseService.ts     # SQLite database management
+│   ├── sessionService.ts      # Secure session handling
+│   ├── nfcService.ts          # NFC reader & wallet scanning
+│   ├── polkadotService.ts     # Polkadot balance & monitoring
+│   └── paymentService.ts      # Payment processing
+├── validation/                # Zod validation schemas
+└── utils/                     # Utility functions
 ```
 
 ## 💡 Usage
 
-### **Processing Payments**
-1. Enter amount using the keypad (cents-based: "150" = $1.50)
-2. Tap "Charge" to initiate payment
-3. Customer taps NFC device to send payment
-4. Real-time monitoring confirms transaction
-5. "Approved" message with block explorer link
+### **Customer Experience**
+1. **Browse Products** - View product catalog with category filtering
+2. **Add to Cart** - Select products and quantities
+3. **Checkout** - Enter customer information
+4. **Crypto Payment** - Pay with DOT/KSM via NFC tap or QR scan
+5. **Order Confirmation** - Real-time payment confirmation
 
-### **Transaction History**
-1. Tap the 📜 history button on the keypad
-2. View all transactions or scan a wallet for specific history
-3. Tap "📱 Scan Wallet for History" and have customer tap their device
-4. Browse filtered transactions for that specific wallet
+### **Admin Management**
+1. **Product Management** - Create, update, delete products
+2. **Category Management** - Organize products by categories
+3. **Order Tracking** - Monitor order status and payments
+4. **Analytics** - View sales and transaction data
 
-
-## 🔄 Payment Flow
-
+### **Payment Processing**
 1. **NFC Detection** → Customer taps device
 2. **Multi-Chain Fetching** → Portfolio analysis across Polkadot ecosystem
 3. **Smart Selection** → Optimal payment token based on priority system
 4. **QR Code Generation** → Payment request with Substrate address
 5. **Real-Time Monitoring** → Polling for transaction confirmation
-6. **History Logging** → Transaction stored with full metadata
+6. **Order Completion** → Automatic order status updates
+
+## 🔒 Security Features
+
+### **Authentication & Authorization**
+- Secure session management with crypto-generated IDs
+- Admin endpoint protection with privilege checks
+- Session timeout and cleanup mechanisms
+- IP validation and security logging
+
+### **Input Validation & Sanitization**
+- Comprehensive Zod schemas for all API endpoints
+- XSS prevention through input sanitization
+- SQL injection prevention via parameterized queries
+- Rate limiting with configurable limits per endpoint
+
+### **Data Protection**
+- HttpOnly, Secure, SameSite cookies
+- CORS configuration for production environments
+- Error message standardization to prevent information disclosure
+- Audit logging for admin actions
 
 ## 🛡️ Transaction Monitoring
 
@@ -91,11 +155,11 @@ scripts/
 - **Real-time balance checking** using Polkadot.js API
 - **Automatic timeout** after 5 minutes
 - **Block explorer integration** for transaction verification
-- **Status tracking**: detected → confirmed → failed
+- **Status tracking**: pending → processing → completed → failed
 
 ## 🍓 Raspberry Pi Deployment
 
-This NFC payment terminal can be deployed as a **plug-and-play kiosk** on Raspberry Pi hardware for production use.
+This application can be deployed as a **plug-and-play kiosk** on Raspberry Pi hardware for production use.
 
 ### **Hardware Requirements**
 - Raspberry Pi 4B (4GB+ RAM recommended)
@@ -109,9 +173,6 @@ This NFC payment terminal can be deployed as a **plug-and-play kiosk** on Raspbe
 - **Automatic startup** with fullscreen kiosk mode
 - **Safety validation** prevents deployment with test addresses
 - **macOS and Linux** build support
-
-### **TODO**
-CATCH AND HANDLE TXN RESPONSE
 
 ### **Quick Deploy**
 ```bash
@@ -129,3 +190,95 @@ cp build-config.env.template build-config.env
 ```
 
 📖 **[Complete Deployment Guide](README-DEPLOYMENT.md)**
+
+## 🔧 API Endpoints
+
+### **Products**
+- `GET /api/products` - List products with pagination/filtering
+- `GET /api/products/:id` - Get single product
+- `POST /api/products` - Create product (admin)
+- `PUT /api/products/:id` - Update product (admin)
+- `DELETE /api/products/:id` - Delete product (admin)
+
+### **Categories**
+- `GET /api/categories` - List categories
+- `GET /api/categories/:id` - Get single category
+- `POST /api/categories` - Create category (admin)
+- `PUT /api/categories/:id` - Update category (admin)
+- `DELETE /api/categories/:id` - Delete category (admin)
+
+### **Shopping Cart**
+- `GET /api/cart` - Get current cart
+- `POST /api/cart/items` - Add item to cart
+- `PUT /api/cart/items/:id` - Update cart item
+- `DELETE /api/cart/items/:id` - Remove cart item
+- `POST /api/cart/clear` - Clear entire cart
+
+### **Orders**
+- `POST /api/orders` - Create order
+- `GET /api/orders/:id` - Get order details
+
+### **Payment**
+- `POST /initiate-payment` - Initiate crypto payment
+- `GET /transaction-history` - Get transaction history
+- `POST /scan-wallet` - Scan wallet for history
+
+## 🛠️ Development
+
+### **Available Scripts**
+```bash
+npm run dev          # Start development servers (frontend + backend)
+npm run client:dev   # Start frontend development server only
+npm run server:dev   # Start backend development server only
+npm run build        # Build both frontend and backend
+npm run client:build # Build frontend only
+npm run server:build # Build backend only
+npm start           # Start production server
+npm run lint        # Run ESLint
+```
+
+### **Environment Variables**
+```bash
+# Database
+DATABASE_PATH=./data/merchant.db
+
+# Security
+STRICT_IP_VALIDATION=false
+CORS_ORIGIN=http://localhost:3000,http://localhost:3001
+
+# Payment
+MERCHANT_ADDRESS=your_polkadot_address_here
+
+# Logging
+LOG_LEVEL=info
+NODE_ENV=development
+```
+
+## 📊 Database Schema
+
+The application uses SQLite with the following tables:
+- **categories** - Product categories
+- **products** - Product catalog
+- **carts** - Shopping cart sessions
+- **cart_items** - Individual cart items
+- **orders** - Order records with payment status
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- Built with [React](https://reactjs.org/) and [Express.js](https://expressjs.com/)
+- Crypto payments powered by [Polkadot.js](https://polkadot.js.org/)
+- Database management with [better-sqlite3](https://github.com/WiseLibs/better-sqlite3)
+- Input validation with [Zod](https://zod.dev/)
+- Security with [Helmet](https://helmetjs.github.io/) and [express-rate-limit](https://github.com/nfriedly/express-rate-limit)

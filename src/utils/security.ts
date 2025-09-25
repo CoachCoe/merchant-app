@@ -124,7 +124,7 @@ export const validateAndSanitizeBody = (req: Request, res: Response, next: NextF
 };
 
 // Error handling middleware
-export const errorHandler = (err: Error, req: Request, res: Response, next: NextFunction): void => {
+export const errorHandler = (err: Error, req: Request, res: Response, _next: NextFunction): void => {
   const requestId = req.requestId || 'unknown';
   
   logger.error('Unhandled error', err, {

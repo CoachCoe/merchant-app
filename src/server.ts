@@ -8,7 +8,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import { App } from './app.js';
 import { PolkadotService } from './services/polkadotService.js';
-import { SUPPORTED_CHAINS, ChainConfig } from './config/index.js';
+import { SUPPORTED_CHAINS } from './config/index.js';
 import { PolkadotTransactionMonitor } from './services/polkadotTransactionMonitor.js';
 import { ConnectionMonitorService } from './services/connectionMonitorService.js';
 import { 
@@ -17,12 +17,10 @@ import {
   requestIdMiddleware, 
   corsOptions, 
   errorHandler, 
-  notFoundHandler,
-  logSecurityEvent 
+  notFoundHandler
 } from './utils/security.js';
 import { validatePaymentRequest } from './utils/validation.js';
 import { logger } from './utils/logger.js';
-import { paymentRequestSchema, qrCodeRequestSchema } from './config/validation.js';
 import { DatabaseService } from './services/databaseService.js';
 import { MarketplaceDatabaseService } from './services/marketplaceDatabaseService.js';
 import { productRoutes } from './routes/products.js';
@@ -257,7 +255,7 @@ async function monitorTransaction(
                         toAddress: merchantAddress,
                         chainId,
                         chainName,
-                        tokenSymbol: tokenSymbol,
+                        tokenSymbol,
                         txHash,
                         explorerUrl,
                         status: 'confirmed',
@@ -318,7 +316,7 @@ const initiatePaymentHandler: AsyncRequestHandler = async (req, res) => {
     logger.business('Payment initiation request', {
         requestId,
         amount,
-        merchantAddress: merchantAddress?.substring(0, 10) + '...', // Log partial address for security
+        merchantAddress: `${merchantAddress?.substring(0, 10)  }...`, // Log partial address for security
     });
 
     try {
@@ -342,7 +340,7 @@ const initiatePaymentHandler: AsyncRequestHandler = async (req, res) => {
                 chainName,
                 {
                     tokenAddress: selectedToken.address,
-                    requiredAmount: requiredAmount,
+                    requiredAmount,
                     tokenSymbol: selectedToken.symbol,
                     decimals: selectedToken.decimals
                 }
@@ -445,7 +443,7 @@ const generateQRCodeHandler: AsyncRequestHandler = async (req, res) => {
             success: true,
             data: {
                 uri: merchantAddress,
-                amount: amount,
+                amount,
                 recipientAddress: merchantAddress
             }
         });

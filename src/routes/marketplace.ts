@@ -10,7 +10,7 @@ import { EscrowService } from '../services/escrowService.js';
 import { logger } from '../utils/logger.js';
 import { sessionMiddleware } from '../middleware/sessionMiddleware.js';
 import { validationMiddleware } from '../middleware/validationMiddleware.js';
-import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '../config/constants.js';
+import { ERROR_MESSAGES } from '../config/constants.js';
 import { z } from 'zod';
 
 const router = Router();

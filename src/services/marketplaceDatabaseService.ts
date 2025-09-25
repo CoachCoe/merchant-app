@@ -4,14 +4,9 @@
  */
 
 import Database from 'better-sqlite3';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { logger } from '../utils/logger.js';
-import fs from 'fs';
 import { DatabaseService } from './databaseService.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 export class MarketplaceDatabaseService {
   private static marketplaceInstance: MarketplaceDatabaseService;

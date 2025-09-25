@@ -3,11 +3,10 @@ import { ProductService } from '../services/productService.js';
 import { logger } from '../utils/logger.js';
 import { sessionMiddleware } from '../middleware/sessionMiddleware.js';
 import { validationMiddleware } from '../middleware/validationMiddleware.js';
-import { 
-  createProductSchema, 
-  updateProductSchema, 
+import {
+  createProductSchema,
   productIdSchema,
-  paginationSchema 
+  paginationSchema
 } from '../validation/schemas.js';
 import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '../config/constants.js';
 

@@ -6,7 +6,7 @@ export class QRCodeService {
     try {
       const qrData = {
         type: 'wallet_address',
-        address: address,
+        address,
         timestamp: Date.now(),
         message: 'Scan this QR code to share your wallet address'
       };
@@ -32,9 +32,9 @@ export class QRCodeService {
     try {
       const qrData = {
         type: 'payment_request',
-        uri: uri,
-        amount: amount,
-        tokenSymbol: tokenSymbol,
+        uri,
+        amount,
+        tokenSymbol,
         timestamp: Date.now(),
         message: `Scan this QR code to pay ${amount} ${tokenSymbol}`
       };
@@ -91,7 +91,7 @@ export class QRCodeService {
       
       const qrData = {
         type: 'apple_wallet_payment',
-        uri: uri,
+        uri,
         amount: paymentData.amount,
         tokenSymbol: paymentData.tokenSymbol,
         chainId: paymentData.chainId,

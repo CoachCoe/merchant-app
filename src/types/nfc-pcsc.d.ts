@@ -15,8 +15,6 @@ declare module 'nfc-pcsc' {
 
   export class NFC {
     constructor();
-    on(event: 'reader', listener: (reader: Reader) => void): void;
-    on(event: 'error', listener: (error: Error) => void): void;
-    on(event: 'end', listener: () => void): void;
+    on(event: 'reader' | 'error' | 'end', listener: ((reader: Reader) => void) | ((error: Error) => void) | (() => void)): void;
   }
 }

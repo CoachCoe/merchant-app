@@ -4,7 +4,7 @@ import { envSchema } from './validation.js';
 dotenv.config();
 
 // Validate environment variables
-const env = envSchema.parse(process.env);
+envSchema.parse(process.env);
 
 export const AID = process.env.NFC_AID || 'F2222222222222'; // must match the AID in your Android app
 export const GET = Buffer.from('80CA000000', 'hex'); // "GET_STRING" APDU

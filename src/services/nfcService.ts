@@ -82,21 +82,20 @@ export class NFCService {
       return;
     }
 
-    let processedAddress: string | null = null;
 
     try {
       const resp = await reader.transmit(GET, 256);
       const sw = resp.readUInt16BE(resp.length - 2);
       
       if (sw !== 0x9000) {
-        throw new Error('Bad status ' + sw.toString(16));
+        throw new Error(`Bad status ${  sw.toString(16)}`);
       }
 
       const phoneResponse = resp.slice(0, -2).toString();
       console.log('📱 Phone says →', phoneResponse);
       
       if (PolkadotService.isSubstrateAddress(phoneResponse)) {
-        processedAddress = phoneResponse;
+        // Address validated successfully
       }
       
       if (this.walletScanArmed) {
@@ -119,7 +118,7 @@ export class NFCService {
   }
 
   // Process wallet address scan
-  private async processWalletScan(phoneResponse: string, reader: Reader): Promise<void> {
+  private async processWalletScan(phoneResponse: string, _reader: Reader): Promise<void> {
     console.log(`🔍 Instance #${this.instanceId} - Processing wallet scan`);
     
     if (PolkadotService.isSubstrateAddress(phoneResponse)) {
@@ -194,7 +193,7 @@ export class NFCService {
         this.cardHandlerResolve({
           success: true,
           message: 'Payment request sent successfully',
-          paymentInfo: paymentInfo
+          paymentInfo
         });
       }
     } catch (error: any) {

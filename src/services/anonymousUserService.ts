@@ -112,12 +112,50 @@ export class AnonymousUserService {
    */
   async updateUserActivity(userId: string): Promise<void> {
     const query = `
-      UPDATE anonymous_users 
-      SET last_active = CURRENT_TIMESTAMP 
+      UPDATE anonymous_users
+      SET last_active = CURRENT_TIMESTAMP
       WHERE id = ?
     `;
-    
+
     this.db.prepare(query).run(userId);
+  }
+
+  /**
+   * Update user preferences and settings
+   */
+  async updateUser(userId: string, updates: {
+    preferences?: any;
+    privacy?: any;
+  }): Promise<AnonymousUser | null> {
+    const updateFields: string[] = [];
+    const params: any[] = [];
+
+    if (updates.preferences !== undefined) {
+      updateFields.push('preferences = ?');
+      params.push(JSON.stringify(updates.preferences));
+    }
+
+    if (updates.privacy !== undefined) {
+      updateFields.push('privacy_settings = ?');
+      params.push(JSON.stringify(updates.privacy));
+    }
+
+    if (updateFields.length === 0) {
+      return this.getUserById(userId);
+    }
+
+    params.push(userId);
+
+    const query = `
+      UPDATE anonymous_users
+      SET ${updateFields.join(', ')}, last_active = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `;
+
+    this.db.prepare(query).run(...params);
+
+    logger.info('User settings updated', { userId });
+    return this.getUserById(userId);
   }
 
   /**

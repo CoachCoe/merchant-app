@@ -53,18 +53,43 @@ export class DatabaseService {
       )
     `);
 
-    // Products table
+    // Products table (unified model for both traditional and marketplace)
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS products (
         id TEXT PRIMARY KEY,
-        name TEXT NOT NULL,
+        title TEXT NOT NULL,
         description TEXT,
         price INTEGER NOT NULL,
-        image TEXT,
         category_id TEXT,
+        images TEXT,
+
+        seller_id TEXT,
+        seller_reputation INTEGER DEFAULT 0,
+        seller_wallet_address TEXT,
+
+        ipfs_metadata_hash TEXT,
+        blockchain_verified BOOLEAN DEFAULT 0,
+        transaction_hash TEXT,
+        block_number INTEGER,
+        chain_id INTEGER,
+
+        digital_delivery_url TEXT,
+        digital_delivery_method TEXT,
+        digital_delivery_instructions TEXT,
+
+        tags TEXT,
+        condition TEXT,
+        availability TEXT DEFAULT 'available',
+
+        views INTEGER DEFAULT 0,
+        favorites INTEGER DEFAULT 0,
+        purchases INTEGER DEFAULT 0,
+
         is_active BOOLEAN DEFAULT 1,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        expires_at DATETIME,
+
         FOREIGN KEY (category_id) REFERENCES categories(id)
       )
     `);
@@ -93,34 +118,12 @@ export class DatabaseService {
       )
     `);
 
-    // Orders table
-    this.db.exec(`
-      CREATE TABLE IF NOT EXISTS orders (
-        id TEXT PRIMARY KEY,
-        order_number TEXT UNIQUE NOT NULL,
-        cart_snapshot TEXT NOT NULL,
-        subtotal INTEGER NOT NULL,
-        tax INTEGER DEFAULT 0,
-        total INTEGER NOT NULL,
-        customer_email TEXT,
-        customer_name TEXT,
-        payment_status TEXT DEFAULT 'pending',
-        transaction_hash TEXT,
-        block_number INTEGER,
-        chain_id TEXT,
-        token_used TEXT CHECK (token_used IN ('DOT', 'KSM', 'USDC')),
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        completed_at DATETIME
-      )
-    `);
-
     // Create indexes for better performance
     this.db.exec(`
       CREATE INDEX IF NOT EXISTS idx_products_category ON products(category_id);
       CREATE INDEX IF NOT EXISTS idx_products_active ON products(is_active);
+      CREATE INDEX IF NOT EXISTS idx_products_seller ON products(seller_id);
       CREATE INDEX IF NOT EXISTS idx_cart_items_cart ON cart_items(cart_id);
-      CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(payment_status);
-      CREATE INDEX IF NOT EXISTS idx_orders_created ON orders(created_at);
     `);
 
     // Insert default categories if they don't exist
@@ -148,43 +151,43 @@ export class DatabaseService {
     // Insert some sample products
     const sampleProducts = [
       {
-        id: 'sample-1',
-        name: 'Wireless Headphones',
+        id: '550e8400-e29b-41d4-a716-446655440001',
+        title: 'Wireless Headphones',
         description: 'High-quality wireless headphones with noise cancellation',
-        price: 19999, // $199.99
-        image: 'https://via.placeholder.com/300x300?text=Headphones',
+        price: 19999,
+        images: JSON.stringify(['https://via.placeholder.com/300x300?text=Headphones']),
         categoryId: 'electronics'
       },
       {
-        id: 'sample-2',
-        name: 'Cotton T-Shirt',
+        id: '550e8400-e29b-41d4-a716-446655440002',
+        title: 'Cotton T-Shirt',
         description: 'Comfortable 100% cotton t-shirt in various colors',
-        price: 2499, // $24.99
-        image: 'https://via.placeholder.com/300x300?text=T-Shirt',
+        price: 2499,
+        images: JSON.stringify(['https://via.placeholder.com/300x300?text=T-Shirt']),
         categoryId: 'clothing'
       },
       {
-        id: 'sample-3',
-        name: 'Programming Book',
+        id: '550e8400-e29b-41d4-a716-446655440003',
+        title: 'Programming Book',
         description: 'Learn TypeScript programming from basics to advanced',
-        price: 3999, // $39.99
-        image: 'https://via.placeholder.com/300x300?text=Book',
+        price: 3999,
+        images: JSON.stringify(['https://via.placeholder.com/300x300?text=Book']),
         categoryId: 'books'
       }
     ];
 
     const insertProduct = this.db.prepare(`
-      INSERT OR IGNORE INTO products (id, name, description, price, image, category_id)
+      INSERT OR IGNORE INTO products (id, title, description, price, images, category_id)
       VALUES (?, ?, ?, ?, ?, ?)
     `);
 
     sampleProducts.forEach(product => {
       insertProduct.run(
         product.id,
-        product.name,
+        product.title,
         product.description,
         product.price,
-        product.image,
+        product.images,
         product.categoryId
       );
     });

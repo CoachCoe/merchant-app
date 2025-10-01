@@ -189,17 +189,17 @@ export class CartService {
   // Get cart items with product details
   private async getCartItems(cartId: string): Promise<CartItem[]> {
     const query = `
-      SELECT 
+      SELECT
         ci.id,
         ci.product_id as productId,
         ci.quantity,
         ci.unit_price as unitPrice,
         ci.created_at as createdAt,
-        p.name,
+        p.title,
         p.description,
         p.price,
-        p.image,
-        p.category_id as category,
+        p.images,
+        p.category_id as categoryId,
         p.is_active as isActive,
         p.created_at as productCreatedAt,
         p.updated_at as productUpdatedAt
@@ -211,25 +211,34 @@ export class CartService {
 
     const rows = this.db.prepare(query).all(cartId) as any[];
 
-    return rows.map(row => ({
-      id: row.id,
-      productId: row.productId,
-      product: {
-        id: row.productId,
-        name: row.name,
-        description: row.description,
-        price: row.price,
-        image: row.image,
-        category: row.category,
-        isActive: Boolean(row.isActive),
-        createdAt: new Date(row.productCreatedAt),
-        updatedAt: new Date(row.productUpdatedAt)
-      },
-      quantity: row.quantity,
-      unitPrice: row.unitPrice,
-      totalPrice: row.quantity * row.unitPrice,
-      createdAt: new Date(row.createdAt)
-    }));
+    return rows.map(row => {
+      let images: string[] = [];
+      try {
+        images = row.images ? JSON.parse(row.images) : [];
+      } catch (e) {
+        images = [row.images].filter(Boolean);
+      }
+
+      return {
+        id: row.id,
+        productId: row.productId,
+        product: {
+          id: row.productId,
+          title: row.title,
+          description: row.description,
+          price: row.price,
+          images,
+          categoryId: row.categoryId,
+          isActive: Boolean(row.isActive),
+          createdAt: row.productCreatedAt,
+          updatedAt: row.productUpdatedAt
+        },
+        quantity: row.quantity,
+        unitPrice: row.unitPrice,
+        totalPrice: row.quantity * row.unitPrice,
+        createdAt: new Date(row.createdAt)
+      };
+    });
   }
 
   // Calculate cart totals

@@ -1,92 +1,60 @@
-# 🌐 Web3 Anonymous Marketplace
+# eShop v0.1 - Anonymous Web3 Marketplace (MVP)
 
-A comprehensive Web3 marketplace that enables anonymous buying and selling using cryptocurrency payments through the Polkadot ecosystem. Built with React, Express.js, and integrated with NFC payment processing for seamless crypto transactions.
+A decentralized marketplace enabling anonymous buying and selling of digital goods using cryptocurrency payments through the Polkadot ecosystem.
 
-## ✨ Features
+## 🚧 Current Status: **In Development**
 
-### 🌐 **Web3 Marketplace Platform**
-- **Anonymous Trading** - Buy and sell without revealing identity
-- **Advanced Search** - Multi-criteria product discovery with filters
-- **Seller Reputation** - Blockchain-based trust scoring system
-- **Escrow Protection** - Multi-signature escrow for secure transactions
-- **Dispute Resolution** - Automated and manual dispute handling
-- **Category Browsing** - Organized product categories with carousel navigation
-- **Trending Products** - Popular and featured item discovery
-- **Seller Spotlight** - Top seller and new seller showcases
+This is a **work-in-progress MVP** for internal Parity usage. Core marketplace features are being implemented according to the PRD.
 
-### 🛍️ **E-commerce Platform**
-- **Product Catalog** - Browse and filter products by category
-- **Shopping Cart** - Add, update, and manage cart items
-- **Order Management** - Complete order lifecycle with crypto payments
-- **Admin Dashboard** - Manage products, categories, and orders
-- **Responsive Design** - Works on mobile, tablet, and desktop
-- **PWA Ready** - Can be installed as a mobile app
+### ✅ Implemented
+- **Session-based anonymous browsing** - Browse products without wallet connection
+- **Privacy-preserving cart** - Cart tied to session, not identity
+- **Anonymous checkout** - No personal information required
+- **Product catalog** - Category-based browsing and search
+- **Secure session management** - Crypto-generated session IDs
+- **Input validation** - Comprehensive Zod schemas
+- **Rate limiting** - DDoS protection
+- **WebSocket real-time updates** - Status notifications
+- **Database schema** - Ready for marketplace features (users, reputation, transactions)
 
-### 💳 **Crypto Payment Integration**
-- **Multi-Chain Support** - DOT, KSM, MOVR, SDN tokens
-- **NFC Payments** - Tap-to-pay with NFC-enabled wallets
-- **QR Code Payments** - Scan QR codes for wallet payments
-- **Real-time Monitoring** - Live transaction status updates
-- **Smart Token Selection** - Automatic optimal payment token selection
+### 🚧 In Development (See IMPLEMENTATION_ROADMAP.md)
+- **Wallet Authentication** - WalletConnect, MetaMask, Talisman, Nova wallet support
+- **Google/Github OAuth** - Social login with non-custodial wallet generation
+- **Real Blockchain Integration** - Polkadot.js API for DOT/KSM balance checking and transaction monitoring
+- **Escrow Smart Contracts** - Multi-signature escrow for secure transactions (Ink! on Substrate)
+- **IPFS Integration** - Decentralized metadata storage for products
+- **Polkadot Identity** - Display onchain identities for connected wallets
+- **Proof-of-Transaction Reputation** - Blockchain-based trust scoring
 
-### 🔒 **Enterprise Security**
-- **Anonymous User System** - Privacy-preserving user management
-- **Secure Session Management** - Crypto-generated session IDs
-- **Input Validation** - Comprehensive Zod schemas preventing XSS/injection
-- **Rate Limiting** - DDoS protection with configurable limits
-- **Admin Authentication** - Protected admin endpoints with audit logging
-- **CORS Security** - Production-ready CORS configuration
-- **Escrow Security** - Multi-signature wallet protection for transactions
-- **Reputation System** - Blockchain-based trust and verification
+### ❌ Not in V1 Scope (PRD Limitations)
+- Physical goods delivery / anonymous logistics
+- Zero-knowledge proof integration
+- GDPR compliance tooling
+- Traditional payment methods (fiat)
+- Decentralized storage (Arweave/Walrus)
+- NFT-based product authenticity
+- Dispute resolution mechanisms
+- Time-locked refunds
 
-## 🌐 Supported Networks
+## 🎯 Quick Start
 
-- **Polkadot Relay Chain** (DOT)
-- **Kusama Relay Chain** (KSM)
-- **Moonriver** (Kusama Parachain - MOVR)
-- **Shiden** (Kusama Parachain - SDN)
-
-### 🎯 **Smart Payment Priority**
-
-The system automatically selects the optimal payment token using this priority:
-
-```
-Relay Chain Tokens > Parachain Tokens > Other Tokens
-```
-
-**Note:** Prioritizes Polkadot and Kusama relay chain tokens (DOT, KSM) over parachain tokens (MOVR, SDN) for optimal security and finality.
-
-## 🚀 Quick Start
-
-### **Development Setup**
-
-1. **Install dependencies:**
-   ```bash
-   npm install
-   ```
-
-2. **Environment setup:**
-   ```bash
-   # Create environment file (optional - uses defaults)
-   touch .env
-   ```
-
-3. **Start development servers:**
-   ```bash
-   npm run dev
-   ```
-
-4. **Access the application:**
-   - **Frontend**: http://localhost:3001 (React app)
-   - **Backend**: http://localhost:3000 (API server)
-
-### **Production Build**
+### Development
 
 ```bash
-# Build both frontend and backend
-npm run build
+# Install dependencies
+npm install
 
-# Start production server
+# Start development servers (frontend + backend)
+npm run dev
+```
+
+- **Frontend**: http://localhost:3001 (React app)
+- **Backend**: http://localhost:3000 (API server)
+
+### Production Build
+
+```bash
+npm run build
 npm start
 ```
 
@@ -94,178 +62,101 @@ npm start
 
 ```
 src/
-├── server.ts                    # Express server & WebSocket handler
-├── app.ts                      # Main application orchestrator
+├── server.ts                    # Express server & WebSocket
 ├── config/
 │   ├── constants.ts            # Application configuration
 │   └── index.ts               # Polkadot chain configuration
 ├── frontend/                   # React frontend application
 │   ├── components/            # Reusable UI components
 │   ├── pages/                # Page components
-│   ├── hooks/                # Custom React hooks
-│   └── public/               # Static assets
+│   └── hooks/                # Custom React hooks
 ├── middleware/                # Express middleware
-│   ├── sessionMiddleware.ts   # Session management
-│   └── validationMiddleware.ts # Input validation
 ├── models/                    # TypeScript data models
 ├── routes/                    # API route handlers
 ├── services/                  # Business logic services
-│   ├── databaseService.ts     # SQLite database management
-│   ├── sessionService.ts      # Secure session handling
-│   ├── nfcService.ts          # NFC reader & wallet scanning
-│   ├── polkadotService.ts     # Polkadot balance & monitoring
-│   └── paymentService.ts      # Payment processing
+│   ├── databaseService.ts     # SQLite database
+│   ├── sessionService.ts      # Session handling
+│   ├── cartService.ts         # Cart management
+│   ├── productService.ts      # Product CRUD
+│   └── anonymousUserService.ts # User reputation
 ├── validation/                # Zod validation schemas
 └── utils/                     # Utility functions
 ```
 
-## 💡 Usage
-
-### **Customer Experience**
-1. **Browse Products** - View product catalog with category filtering
-2. **Add to Cart** - Select products and quantities
-3. **Checkout** - Enter customer information
-4. **Crypto Payment** - Pay with DOT/KSM via NFC tap or QR scan
-5. **Order Confirmation** - Real-time payment confirmation
-
-### **Admin Management**
-1. **Product Management** - Create, update, delete products
-2. **Category Management** - Organize products by categories
-3. **Order Tracking** - Monitor order status and payments
-4. **Analytics** - View sales and transaction data
-
-### **Payment Processing**
-1. **NFC Detection** → Customer taps device
-2. **Multi-Chain Fetching** → Portfolio analysis across Polkadot ecosystem
-3. **Smart Selection** → Optimal payment token based on priority system
-4. **QR Code Generation** → Payment request with Substrate address
-5. **Real-Time Monitoring** → Polling for transaction confirmation
-6. **Order Completion** → Automatic order status updates
-
 ## 🔒 Security Features
 
-### **Authentication & Authorization**
-- Secure session management with crypto-generated IDs
-- Admin endpoint protection with privilege checks
-- Session timeout and cleanup mechanisms
-- IP validation and security logging
+- **Anonymous User System** - Privacy-preserving user management
+- **Secure Session Management** - Crypto-generated session IDs
+- **Input Validation** - XSS/injection prevention with Zod
+- **Rate Limiting** - Configurable limits per endpoint
+- **CORS Security** - Production-ready configuration
+- **HttpOnly Cookies** - Secure session storage
 
-### **Input Validation & Sanitization**
-- Comprehensive Zod schemas for all API endpoints
-- XSS prevention through input sanitization
-- SQL injection prevention via parameterized queries
-- Rate limiting with configurable limits per endpoint
+## 🛠️ API Endpoints
 
-### **Data Protection**
-- HttpOnly, Secure, SameSite cookies
-- CORS configuration for production environments
-- Error message standardization to prevent information disclosure
-- Audit logging for admin actions
-
-## 🛡️ Transaction Monitoring
-
-- **Polling-based monitoring** for all Polkadot ecosystem chains
-- **Real-time balance checking** using Polkadot.js API
-- **Automatic timeout** after 5 minutes
-- **Block explorer integration** for transaction verification
-- **Status tracking**: pending → processing → completed → failed
-
-## 🍓 Raspberry Pi Deployment
-
-This application can be deployed as a **plug-and-play kiosk** on Raspberry Pi hardware for production use.
-
-### **Hardware Requirements**
-- Raspberry Pi 4B (4GB+ RAM recommended)
-- 7" Official Raspberry Pi Touchscreen 
-- **ACR1252U-M1 NFC Reader** (specifically supported)
-- 32GB+ MicroSD card
-
-### **Deployment Features**
-- **One-command build** creates bootable SD card image
-- **Pre-configured WiFi** and API credentials
-- **Automatic startup** with fullscreen kiosk mode
-- **Safety validation** prevents deployment with test addresses
-- **macOS and Linux** build support
-
-### **Quick Deploy**
-```bash
-# Navigate to deployment scripts
-cd scripts/rpi-deploy
-
-# Configure your deployment
-cp build-config.env.template build-config.env
-# Edit build-config.env with your WiFi, API key, and merchant address
-
-# Build bootable image (macOS)
-./build-pi-image-osx.sh
-
-# Flash the generated nfc-terminal-<date>.img.gz file to SD card using Raspberry Pi Imager and boot!
-```
-
-📖 **[Complete Deployment Guide](README-DEPLOYMENT.md)**
-
-## 🔧 API Endpoints
-
-### **Products**
+### Products
 - `GET /api/products` - List products with pagination/filtering
 - `GET /api/products/:id` - Get single product
-- `POST /api/products` - Create product (admin)
-- `PUT /api/products/:id` - Update product (admin)
-- `DELETE /api/products/:id` - Delete product (admin)
+- `POST /api/products` - Create product
+- `PUT /api/products/:id` - Update product
+- `DELETE /api/products/:id` - Delete product
 
-### **Categories**
+### Categories
 - `GET /api/categories` - List categories
-- `GET /api/categories/:id` - Get single category
-- `POST /api/categories` - Create category (admin)
-- `PUT /api/categories/:id` - Update category (admin)
-- `DELETE /api/categories/:id` - Delete category (admin)
+- `POST /api/categories` - Create category
+- `PUT /api/categories/:id` - Update category
+- `DELETE /api/categories/:id` - Delete category
 
-### **Shopping Cart**
+### Shopping Cart
 - `GET /api/cart` - Get current cart
 - `POST /api/cart/items` - Add item to cart
 - `PUT /api/cart/items/:id` - Update cart item
 - `DELETE /api/cart/items/:id` - Remove cart item
 - `POST /api/cart/clear` - Clear entire cart
 
-### **Orders**
-- `POST /api/orders` - Create order
-- `GET /api/orders/:id` - Get order details
-
-### **Payment**
-- `POST /initiate-payment` - Initiate crypto payment
-- `GET /transaction-history` - Get transaction history
-- `POST /scan-wallet` - Scan wallet for history
-
-### **Marketplace (Web3)**
-- `GET /api/marketplace/products` - List marketplace products with advanced filtering
-- `GET /api/marketplace/products/:id` - Get marketplace product details
-- `POST /api/marketplace/products` - Create marketplace product listing
-- `PUT /api/marketplace/products/:id` - Update marketplace product
-- `DELETE /api/marketplace/products/:id` - Delete marketplace product
+### Marketplace (Web3 - In Development)
 - `GET /api/marketplace/users` - Get anonymous user profile
 - `POST /api/marketplace/users` - Create anonymous user
 - `PUT /api/marketplace/users/:id` - Update user reputation
-- `GET /api/marketplace/transactions` - List user transactions
-- `POST /api/marketplace/transactions` - Create escrow transaction
-- `PUT /api/marketplace/transactions/:id` - Update transaction status
-- `POST /api/marketplace/transactions/:id/dispute` - Raise dispute
-- `POST /api/marketplace/transactions/:id/refund` - Process refund
 
-## 🛠️ Development
+## 🧪 Testing
 
-### **Available Scripts**
 ```bash
-npm run dev          # Start development servers (frontend + backend)
-npm run client:dev   # Start frontend development server only
-npm run server:dev   # Start backend development server only
-npm run build        # Build both frontend and backend
-npm run client:build # Build frontend only
-npm run server:build # Build backend only
-npm start           # Start production server
-npm run lint        # Run ESLint
+npm run test                # Run all tests
+npm run test:backend        # Backend unit tests
+npm run test:frontend       # Frontend tests
+npm run test:coverage       # Coverage report
 ```
 
-### **Environment Variables**
+See `tests/README.md` for detailed testing documentation.
+
+## 📊 Database Schema
+
+### Current Tables
+- **categories** - Product categories
+- **products** - Unified product model (supports marketplace features)
+- **carts** - Shopping cart sessions
+- **cart_items** - Individual cart items
+- **anonymous_users** - User profiles with reputation
+- **reputation_events** - Reputation change history
+
+### Planned Tables (For Implementation)
+- **marketplace_transactions** - Escrow-based transactions
+- **escrow_contracts** - Smart contract tracking
+
+## 📈 Development Roadmap
+
+See `IMPLEMENTATION_ROADMAP.md` for the complete 16-week implementation plan covering:
+
+1. **Weeks 1-2**: Cleanup Phase ✅ (COMPLETED)
+2. **Weeks 3-5**: Core Infrastructure (Wallet Auth, Blockchain Integration, IPFS)
+3. **Weeks 6-9**: Smart Contracts & Escrow
+4. **Weeks 10-12**: Marketplace Features (OAuth, Identity, Reputation)
+5. **Weeks 13-14**: Testing & Polish
+6. **Weeks 15-16**: Internal Deployment at Parity
+
+## 🔧 Environment Variables
+
 ```bash
 # Database
 DATABASE_PATH=./data/merchant.db
@@ -274,48 +165,40 @@ DATABASE_PATH=./data/merchant.db
 STRICT_IP_VALIDATION=false
 CORS_ORIGIN=http://localhost:3000,http://localhost:3001
 
-# Payment
-MERCHANT_ADDRESS=your_polkadot_address_here
-
 # Logging
 LOG_LEVEL=info
 NODE_ENV=development
 ```
 
-## 📊 Database Schema
+## 📝 Available Scripts
 
-The application uses SQLite with the following tables:
-
-### **E-commerce Tables**
-- **categories** - Product categories
-- **products** - Product catalog
-- **carts** - Shopping cart sessions
-- **cart_items** - Individual cart items
-- **orders** - Order records with payment status
-
-### **Marketplace Tables**
-- **anonymous_users** - Anonymous user profiles with reputation
-- **reputation_events** - User reputation change history
-- **marketplace_products** - Web3 marketplace product listings
-- **marketplace_transactions** - Escrow-based transactions
-- **escrow_contracts** - Multi-signature escrow contract tracking
+```bash
+npm run dev          # Start development servers
+npm run build        # Build both frontend and backend
+npm start           # Start production server
+npm run lint        # Run ESLint
+npm test            # Run all tests
+```
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+This is an internal Parity project for V1 MVP. See `CLEANUP_PLAN.md` for the detailed cleanup and implementation strategy.
 
-## 📄 License
+## 📄 Project Documents
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+- `CLEANUP_PLAN.md` - Detailed cleanup plan and gap analysis
+- `IMPLEMENTATION_ROADMAP.md` - 16-week implementation roadmap
+- `tests/README.md` - Testing documentation
+- PRD (see project documentation) - Product requirements
 
 ## 🙏 Acknowledgments
 
 - Built with [React](https://reactjs.org/) and [Express.js](https://expressjs.com/)
-- Crypto payments powered by [Polkadot.js](https://polkadot.js.org/)
+- Crypto payments powered by [Polkadot.js](https://polkadot.js.org/) (to be integrated)
 - Database management with [better-sqlite3](https://github.com/WiseLibs/better-sqlite3)
 - Input validation with [Zod](https://zod.dev/)
 - Security with [Helmet](https://helmetjs.github.io/) and [express-rate-limit](https://github.com/nfriedly/express-rate-limit)
+
+---
+
+**Status**: 🚧 Active Development | **Target**: Internal Parity Usage (Dec 2025) | **Type**: Digital Goods Marketplace MVP

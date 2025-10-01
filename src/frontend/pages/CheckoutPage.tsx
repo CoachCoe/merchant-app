@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../hooks/useCart';
 import { useWebSocket } from '../hooks/useWebSocket';
-import { OrderService } from '../../services/orderService';
 
 const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
@@ -170,34 +169,29 @@ const CheckoutPage: React.FC = () => {
           {step === 'customer' && (
             <div className="card">
               <div className="card-header">
-                <h3>Customer Information</h3>
+                <h3>Anonymous Checkout</h3>
               </div>
               <div className="card-body">
+                <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#f0f9ff', borderRadius: '8px' }}>
+                  <p style={{ margin: 0, color: '#0066cc' }}>
+                    🔒 Your purchase is completely anonymous. No personal information required.
+                  </p>
+                </div>
                 <form onSubmit={handleCustomerSubmit}>
                   <div className="form-group">
-                    <label className="form-label">Full Name *</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={customerInfo.name}
-                      onChange={(e) => setCustomerInfo(prev => ({ ...prev, name: e.target.value }))}
-                      placeholder="Enter your full name"
-                      required
-                    />
-                  </div>
-                  
-                  <div className="form-group">
-                    <label className="form-label">Email Address *</label>
+                    <label className="form-label">Email for Digital Delivery (Optional)</label>
                     <input
                       type="email"
                       className="form-control"
                       value={customerInfo.email}
                       onChange={(e) => setCustomerInfo(prev => ({ ...prev, email: e.target.value }))}
-                      placeholder="Enter your email address"
-                      required
+                      placeholder="Only if you need digital delivery notifications"
                     />
+                    <small style={{ color: '#666', display: 'block', marginTop: '5px' }}>
+                      This email will only be used for delivery and will not be shared with the seller.
+                    </small>
                   </div>
-                  
+
                   <button type="submit" className="btn btn-primary">
                     Continue to Payment
                   </button>

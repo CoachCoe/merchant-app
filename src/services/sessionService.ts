@@ -5,6 +5,8 @@ import { logger } from '../utils/logger.js';
 export interface SessionData {
   sessionId: string;
   userId?: string;
+  tempUserId?: string;
+  walletAddress?: string;
   isAdmin?: boolean;
   createdAt: Date;
   lastAccessed: Date;

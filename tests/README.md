@@ -281,29 +281,32 @@ npm install --save-dev husky lint-staged
 - [x] Playwright setup for E2E
 - [x] Basic test structure
 
-### **Phase 2: Critical Services** ✅
+### **Phase 2: Critical Services** (In Progress)
 - [x] Session management tests
 - [x] Database service tests
 - [x] Validation middleware tests
-- [x] Payment service tests
+- [ ] Wallet authentication tests (TO BE IMPLEMENTED)
+- [ ] Polkadot service tests (TO BE IMPLEMENTED)
+- [ ] Escrow contract tests (TO BE IMPLEMENTED)
+- [ ] IPFS service tests (TO BE IMPLEMENTED)
 
-### **Phase 3: API Coverage** ✅
+### **Phase 3: API Coverage** (In Progress)
 - [x] Cart API tests
 - [x] Products API tests
-- [x] Orders API tests
-- [x] Marketplace API tests
+- [ ] Marketplace product API tests
+- [ ] Anonymous user API tests
+- [ ] Reputation system tests
 
-### **Phase 4: Frontend Components** ✅
+### **Phase 4: Frontend Components** (In Progress)
 - [x] ProductCard component tests
 - [x] useCart hook tests
-- [x] Form validation tests
-- [x] Error handling tests
+- [ ] Wallet connection component tests
+- [ ] Anonymous checkout tests
 
-### **Phase 5: E2E Scenarios** ✅
-- [x] Payment flow tests
-- [x] User registration tests
-- [x] Admin dashboard tests
-- [x] Mobile responsiveness tests
+### **Phase 5: E2E Scenarios** (Not Started - Removed NFC Flow)
+- [ ] Wallet connection flow (TO BE IMPLEMENTED)
+- [ ] Anonymous purchase flow (TO BE IMPLEMENTED)
+- [ ] Escrow transaction flow (TO BE IMPLEMENTED)
 
 ### **Phase 6: Advanced Testing** (Future)
 - [ ] Performance testing

@@ -7,7 +7,6 @@ import ProductPage from './pages/ProductPage';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
 import OrderComplete from './pages/OrderComplete';
-import AdminPage from './pages/AdminPage';
 import MarketplaceHomePage from './pages/MarketplaceHomePage';
 import { CartProvider } from './hooks/useCart';
 import { WebSocketProvider } from './hooks/useWebSocket';
@@ -70,16 +69,8 @@ function App() {
                 <Route path="/cart" element={<CartPage />} />
                 <Route path="/checkout" element={<CheckoutPage />} />
                 <Route path="/order-complete/:orderId" element={<OrderComplete />} />
-                <Route path="/admin" element={<AdminPage />} />
-                
-                {/* Marketplace Routes */}
+
                 <Route path="/marketplace" element={<MarketplaceHomePage />} />
-                <Route path="/marketplace/search" element={<div>Search Results Page (Coming Soon)</div>} />
-                <Route path="/marketplace/category/:categoryId" element={<div>Category Page (Coming Soon)</div>} />
-                <Route path="/marketplace/product/:productId" element={<div>Marketplace Product Page (Coming Soon)</div>} />
-                <Route path="/marketplace/seller/:sellerId" element={<div>Seller Page (Coming Soon)</div>} />
-                <Route path="/marketplace/sell" element={<div>Sell Page (Coming Soon)</div>} />
-                <Route path="/marketplace/trending" element={<div>Trending Page (Coming Soon)</div>} />
               </Routes>
             </main>
             <Footer />

@@ -6,7 +6,6 @@ import { logger } from '../utils/logger.js';
 export class ProductService {
   private db = DatabaseService.getInstance().getDatabase();
 
-  // Get all products with pagination and filtering
   async getProducts(options: {
     page?: number;
     limit?: number;
@@ -31,12 +30,11 @@ export class ProductService {
     }
 
     if (search) {
-      whereClause += ' AND (p.name LIKE ? OR p.description LIKE ?)';
+      whereClause += ' AND (p.title LIKE ? OR p.description LIKE ?)';
       const searchTerm = `%${search}%`;
       params.push(searchTerm, searchTerm);
     }
 
-    // Get total count
     const countQuery = `
       SELECT COUNT(*) as total
       FROM products p
@@ -44,15 +42,19 @@ export class ProductService {
     `;
     const countResult = this.db.prepare(countQuery).get(...params) as { total: number };
 
-    // Get products with category information
     const productsQuery = `
-      SELECT 
+      SELECT
         p.id,
-        p.name,
+        p.title,
         p.description,
         p.price,
-        p.image,
-        p.category_id as category,
+        p.images,
+        p.category_id as categoryId,
+        p.seller_id as sellerId,
+        p.seller_reputation as sellerReputation,
+        p.seller_wallet_address as sellerWalletAddress,
+        p.ipfs_metadata_hash as ipfsMetadataHash,
+        p.blockchain_verified as blockchainVerified,
         p.is_active as isActive,
         p.created_at as createdAt,
         p.updated_at as updatedAt,
@@ -75,16 +77,20 @@ export class ProductService {
     };
   }
 
-  // Get single product by ID
   async getProductById(id: string): Promise<Product | null> {
     const query = `
-      SELECT 
+      SELECT
         p.id,
-        p.name,
+        p.title,
         p.description,
         p.price,
-        p.image,
-        p.category_id as category,
+        p.images,
+        p.category_id as categoryId,
+        p.seller_id as sellerId,
+        p.seller_reputation as sellerReputation,
+        p.seller_wallet_address as sellerWalletAddress,
+        p.ipfs_metadata_hash as ipfsMetadataHash,
+        p.blockchain_verified as blockchainVerified,
         p.is_active as isActive,
         p.created_at as createdAt,
         p.updated_at as updatedAt,
@@ -98,28 +104,31 @@ export class ProductService {
     return row ? this.mapRowToProduct(row) : null;
   }
 
-  // Create new product
   async createProduct(data: CreateProductRequest): Promise<Product> {
     const id = uuidv4();
     const now = new Date().toISOString();
 
+    const imagesJson = typeof data.images === 'string'
+      ? data.images
+      : JSON.stringify(data.images);
+
     const query = `
-      INSERT INTO products (id, name, description, price, image, category_id, created_at, updated_at)
+      INSERT INTO products (id, title, description, price, images, category_id, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     this.db.prepare(query).run(
       id,
-      data.name,
+      data.title,
       data.description,
       data.price,
-      data.image,
-      data.category,
+      imagesJson,
+      data.categoryId,
       now,
       now
     );
 
-    logger.info('Product created', { productId: id, name: data.name });
+    logger.info('Product created', { productId: id, title: data.title });
     const product = await this.getProductById(id);
     if (!product) {
       throw new Error('Failed to retrieve created product');
@@ -127,7 +136,6 @@ export class ProductService {
     return product;
   }
 
-  // Update product
   async updateProduct(id: string, data: UpdateProductRequest): Promise<Product | null> {
     const existingProduct = await this.getProductById(id);
     if (!existingProduct) {
@@ -137,9 +145,9 @@ export class ProductService {
     const updateFields: string[] = [];
     const params: any[] = [];
 
-    if (data.name !== undefined) {
-      updateFields.push('name = ?');
-      params.push(data.name);
+    if (data.title !== undefined) {
+      updateFields.push('title = ?');
+      params.push(data.title);
     }
     if (data.description !== undefined) {
       updateFields.push('description = ?');
@@ -149,13 +157,16 @@ export class ProductService {
       updateFields.push('price = ?');
       params.push(data.price);
     }
-    if (data.image !== undefined) {
-      updateFields.push('image = ?');
-      params.push(data.image);
+    if (data.images !== undefined) {
+      updateFields.push('images = ?');
+      const imagesJson = typeof data.images === 'string'
+        ? data.images
+        : JSON.stringify(data.images);
+      params.push(imagesJson);
     }
-    if (data.category !== undefined) {
+    if (data.categoryId !== undefined) {
       updateFields.push('category_id = ?');
-      params.push(data.category);
+      params.push(data.categoryId);
     }
     if (data.isActive !== undefined) {
       updateFields.push('is_active = ?');
@@ -171,7 +182,7 @@ export class ProductService {
     params.push(id);
 
     const query = `
-      UPDATE products 
+      UPDATE products
       SET ${updateFields.join(', ')}
       WHERE id = ?
     `;
@@ -182,11 +193,10 @@ export class ProductService {
     return this.getProductById(id);
   }
 
-  // Delete product
   async deleteProduct(id: string): Promise<boolean> {
     const query = 'DELETE FROM products WHERE id = ?';
     const result = this.db.prepare(query).run(id);
-    
+
     if (result.changes > 0) {
       logger.info('Product deleted', { productId: id });
       return true;
@@ -194,18 +204,29 @@ export class ProductService {
     return false;
   }
 
-  // Helper method to map database row to Product object
   private mapRowToProduct(row: any): Product {
+    let images: string[] = [];
+    try {
+      images = row.images ? JSON.parse(row.images) : [];
+    } catch (e) {
+      images = [row.images].filter(Boolean);
+    }
+
     return {
       id: row.id,
-      name: row.name,
+      title: row.title,
       description: row.description,
       price: row.price,
-      image: row.image,
-      category: row.category,
+      categoryId: row.categoryId,
+      images,
+      sellerId: row.sellerId,
+      sellerReputation: row.sellerReputation,
+      sellerWalletAddress: row.sellerWalletAddress,
+      ipfsMetadataHash: row.ipfsMetadataHash,
+      blockchainVerified: Boolean(row.blockchainVerified),
       isActive: Boolean(row.isActive),
-      createdAt: new Date(row.createdAt),
-      updatedAt: new Date(row.updatedAt)
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt
     };
   }
 }

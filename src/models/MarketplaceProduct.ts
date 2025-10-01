@@ -1,93 +1,48 @@
 /**
- * Enhanced Product Model for Web3 Marketplace
- * Supports IPFS storage, anonymous sellers, and blockchain verification
+ * Marketplace Product Model
+ * Represents products in the Web3 marketplace
  */
 
 export interface MarketplaceProduct {
-  id: string; // IPFS hash or content-addressed ID
+  id: string;
   title: string;
   description: string;
-  images: string[]; // IPFS hashes for product images
+  images: string[];
   price: {
-    amount: string; // Price in smallest unit (e.g., planck for DOT)
-    currency: 'DOT' | 'KSM';
-    usdValue?: number; // Cached USD value for display
+    amount: number;
+    currency: string;
+    usdValue: number;
   };
   seller: {
-    anonymousId: string;
+    id: string;
     reputation: number;
-    walletAddress?: string; // For escrow purposes
-    displayName?: string; // Optional display name
+    totalSales: number;
   };
+  condition: 'new' | 'like_new' | 'good' | 'fair' | 'poor';
+  availability: 'available' | 'sold' | 'reserved';
   category: string;
-  subcategory?: string;
   tags: string[];
-  availability: 'available' | 'sold' | 'reserved' | 'draft';
-  condition: 'new' | 'used' | 'refurbished';
-  shipping: {
-    available: boolean;
-    cost?: {
-      amount: string;
-      currency: 'DOT' | 'KSM';
-    };
-    estimatedDays?: number;
-    regions?: string[]; // Shipping regions
-  };
-  digitalDelivery: {
-    available: boolean;
-    method: 'email' | 'download' | 'nft';
-    instructions?: string;
-  };
-  blockchain: {
-    verified: boolean;
-    transactionHash?: string; // Hash of the listing transaction
-    blockNumber?: number;
-    chainId?: string;
-  };
-  metadata: {
-    ipfsHash: string; // Full product metadata on IPFS
-    version: number; // For metadata updates
-    lastUpdated: Date;
-  };
-  stats: {
-    views: number;
-    favorites: number;
-    purchases: number;
-    reviews: number;
-    averageRating: number;
-  };
-  createdAt: Date;
-  updatedAt: Date;
-  expiresAt?: Date; // For time-limited listings
+  ipfsHash: string;
+  createdAt: string;
+  updatedAt: string;
+  viewCount: number;
+  likeCount: number;
+  isFeatured: boolean;
+  isVerified: boolean;
 }
 
 export interface CreateMarketplaceProductRequest {
   title: string;
   description: string;
-  images: string[]; // IPFS hashes
+  images: string[];
   price: {
-    amount: string;
-    currency: 'DOT' | 'KSM';
+    amount: number;
+    currency: string;
   };
+  condition: 'new' | 'like_new' | 'good' | 'fair' | 'poor';
   category: string;
-  subcategory?: string;
   tags: string[];
-  condition: 'new' | 'used' | 'refurbished';
-  shipping?: {
-    available: boolean;
-    cost?: {
-      amount: string;
-      currency: 'DOT' | 'KSM';
-    };
-    estimatedDays?: number;
-    regions?: string[];
-  };
-  digitalDelivery?: {
-    available: boolean;
-    method: 'email' | 'download' | 'nft';
-    instructions?: string;
-  };
-  expiresAt?: Date;
+  digitalDeliveryInfo?: string;
 }
 
 export interface UpdateMarketplaceProductRequest {
@@ -95,76 +50,34 @@ export interface UpdateMarketplaceProductRequest {
   description?: string;
   images?: string[];
   price?: {
-    amount: string;
-    currency: 'DOT' | 'KSM';
+    amount: number;
+    currency: string;
   };
+  condition?: 'new' | 'like_new' | 'good' | 'fair' | 'poor';
   category?: string;
-  subcategory?: string;
   tags?: string[];
-  availability?: 'available' | 'sold' | 'reserved' | 'draft';
-  condition?: 'new' | 'used' | 'refurbished';
-  shipping?: {
-    available: boolean;
-    cost?: {
-      amount: string;
-      currency: 'DOT' | 'KSM';
-    };
-    estimatedDays?: number;
-    regions?: string[];
-  };
-  digitalDelivery?: {
-    available: boolean;
-    method: 'email' | 'download' | 'nft';
-    instructions?: string;
-  };
-  expiresAt?: Date;
+  availability?: 'available' | 'sold' | 'reserved';
+  digitalDeliveryInfo?: string;
 }
 
-export interface ProductListResponse {
-  products: MarketplaceProduct[];
-  total: number;
-  page: number;
-  limit: number;
-  hasMore: boolean;
-  filters: {
-    categories: string[];
-    priceRange: {
-      min: number;
-      max: number;
-    };
-    conditions: string[];
-    availability: string[];
-  };
-}
-
-export interface ProductSearchRequest {
-  query?: string;
+export interface MarketplaceProductFilters {
   category?: string;
-  subcategory?: string;
-  tags?: string[];
-  priceMin?: number;
-  priceMax?: number;
-  currency?: 'DOT' | 'KSM';
+  priceRange?: {
+    min: number;
+    max: number;
+  };
   condition?: string[];
   availability?: string[];
-  sellerReputation?: number;
-  sortBy?: 'price' | 'reputation' | 'newest' | 'popularity' | 'rating';
-  sortOrder?: 'asc' | 'desc';
-  page?: number;
-  limit?: number;
+  sellerId?: string;
+  tags?: string[];
+  search?: string;
+  sortBy?: 'newest' | 'oldest' | 'price_low' | 'price_high' | 'popularity' | 'reputation';
 }
 
-export interface ProductStats {
+export interface MarketplaceProductStats {
   totalProducts: number;
-  activeProducts: number;
   totalCategories: number;
-  averagePrice: {
-    DOT: number;
-    KSM: number;
-  };
-  topCategories: Array<{
-    category: string;
-    count: number;
-  }>;
-  recentListings: number;
+  averagePrice: number;
+  totalSellers: number;
+  featuredProducts: number;
 }

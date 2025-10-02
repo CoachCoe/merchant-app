@@ -7,7 +7,7 @@ const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
   const { cart, clearCart } = useCart();
   const { lastMessage, isConnected } = useWebSocket();
-  const [step, setStep] = useState<'customer' | 'payment' | 'processing' | 'complete'>('customer');
+  const [step, setStep] = useState<'payment' | 'processing' | 'complete'>('payment');
   const [customerInfo, setCustomerInfo] = useState({ name: '', email: '' });
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -120,13 +120,13 @@ const CheckoutPage: React.FC = () => {
       <h1 style={{ marginBottom: '30px', color: '#333' }}>Checkout</h1>
 
       {/* Progress Steps */}
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
         marginBottom: '40px',
         gap: '20px'
       }}>
-        {['customer', 'payment', 'processing', 'complete'].map((stepName, index) => (
+        {['payment', 'processing', 'complete'].map((stepName, index) => (
           <div key={stepName} style={{ 
             display: 'flex', 
             alignItems: 'center',
@@ -162,41 +162,6 @@ const CheckoutPage: React.FC = () => {
           {error && (
             <div className="alert alert-error" style={{ marginBottom: '20px' }}>
               {error}
-            </div>
-          )}
-
-          {/* Customer Information Step */}
-          {step === 'customer' && (
-            <div className="card">
-              <div className="card-header">
-                <h3>Anonymous Checkout</h3>
-              </div>
-              <div className="card-body">
-                <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#f0f9ff', borderRadius: '8px' }}>
-                  <p style={{ margin: 0, color: '#0066cc' }}>
-                    🔒 Your purchase is completely anonymous. No personal information required.
-                  </p>
-                </div>
-                <form onSubmit={handleCustomerSubmit}>
-                  <div className="form-group">
-                    <label className="form-label">Email for Digital Delivery (Optional)</label>
-                    <input
-                      type="email"
-                      className="form-control"
-                      value={customerInfo.email}
-                      onChange={(e) => setCustomerInfo(prev => ({ ...prev, email: e.target.value }))}
-                      placeholder="Only if you need digital delivery notifications"
-                    />
-                    <small style={{ color: '#666', display: 'block', marginTop: '5px' }}>
-                      This email will only be used for delivery and will not be shared with the seller.
-                    </small>
-                  </div>
-
-                  <button type="submit" className="btn btn-primary">
-                    Continue to Payment
-                  </button>
-                </form>
-              </div>
             </div>
           )}
 

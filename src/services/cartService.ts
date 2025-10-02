@@ -100,7 +100,7 @@ export class CartService {
         cart.id,
         request.productId,
         request.quantity,
-        product.price,
+        product.priceHollar,
         now
       );
 
@@ -132,9 +132,9 @@ export class CartService {
     }
 
     const query = `
-      UPDATE cart_items 
+      UPDATE cart_items
       SET quantity = ?, unit_price = (
-        SELECT price FROM products WHERE id = cart_items.product_id
+        SELECT price_hollar FROM products WHERE id = cart_items.product_id
       )
       WHERE id = ? AND cart_id = ?
     `;
@@ -197,12 +197,17 @@ export class CartService {
         ci.created_at as createdAt,
         p.title,
         p.description,
-        p.price,
+        p.price_hollar as priceHollar,
         p.images,
         p.category_id as categoryId,
+        p.seller_wallet_address as sellerWalletAddress,
+        p.ipfs_metadata_hash as ipfsMetadataHash,
         p.is_active as isActive,
         p.created_at as productCreatedAt,
-        p.updated_at as productUpdatedAt
+        p.updated_at as productUpdatedAt,
+        p.views,
+        p.purchases,
+        p.blockchain_verified as blockchainVerified
       FROM cart_items ci
       JOIN products p ON ci.product_id = p.id
       WHERE ci.cart_id = ?
@@ -226,9 +231,14 @@ export class CartService {
           id: row.productId,
           title: row.title,
           description: row.description,
-          price: row.price,
+          priceHollar: row.priceHollar,
           images,
           categoryId: row.categoryId,
+          sellerWalletAddress: row.sellerWalletAddress,
+          ipfsMetadataHash: row.ipfsMetadataHash,
+          blockchainVerified: Boolean(row.blockchainVerified),
+          views: row.views,
+          purchases: row.purchases,
           isActive: Boolean(row.isActive),
           createdAt: row.productCreatedAt,
           updatedAt: row.productUpdatedAt

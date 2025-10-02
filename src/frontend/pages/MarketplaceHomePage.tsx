@@ -68,7 +68,7 @@ const MarketplaceHomePage: React.FC = () => {
     <div className="marketplace-homepage">
       {/* Hero Section */}
       <section className="hero-section" style={{
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
         color: 'white',
         padding: '80px 20px',
         textAlign: 'center',
@@ -168,10 +168,10 @@ const MarketplaceHomePage: React.FC = () => {
             }}>
               ✨ Newest Listings
             </h2>
-            <Link 
-              to="/marketplace/products" 
+            <Link
+              to="/marketplace/products"
               style={{
-                color: '#667eea',
+                color: '#6366f1',
                 textDecoration: 'none',
                 fontWeight: '600',
                 fontSize: '1.1rem'
@@ -222,10 +222,10 @@ const MarketplaceHomePage: React.FC = () => {
             gap: '40px' 
           }}>
             <div style={{ textAlign: 'center' }}>
-              <div style={{ 
-                fontSize: '3rem', 
+              <div style={{
+                fontSize: '3rem',
                 marginBottom: '20px',
-                background: 'linear-gradient(135deg, #667eea, #764ba2)',
+                background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent'
               }}>
@@ -240,10 +240,10 @@ const MarketplaceHomePage: React.FC = () => {
             </div>
             
             <div style={{ textAlign: 'center' }}>
-              <div style={{ 
-                fontSize: '3rem', 
+              <div style={{
+                fontSize: '3rem',
                 marginBottom: '20px',
-                background: 'linear-gradient(135deg, #667eea, #764ba2)',
+                background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent'
               }}>
@@ -258,10 +258,10 @@ const MarketplaceHomePage: React.FC = () => {
             </div>
             
             <div style={{ textAlign: 'center' }}>
-              <div style={{ 
-                fontSize: '3rem', 
+              <div style={{
+                fontSize: '3rem',
                 marginBottom: '20px',
-                background: 'linear-gradient(135deg, #667eea, #764ba2)',
+                background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent'
               }}>
@@ -278,12 +278,12 @@ const MarketplaceHomePage: React.FC = () => {
         </section>
 
         {/* Call to Action */}
-        <section style={{ 
-          textAlign: 'center', 
+        <section style={{
+          textAlign: 'center',
           padding: '60px 40px',
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
           color: 'white',
-          borderRadius: '12px',
+          borderRadius: '16px',
           marginBottom: '40px'
         }}>
           <h2 style={{ fontSize: '2.5rem', marginBottom: '20px' }}>
@@ -292,21 +292,28 @@ const MarketplaceHomePage: React.FC = () => {
           <p style={{ fontSize: '1.2rem', marginBottom: '30px', opacity: 0.9 }}>
             Join thousands of anonymous sellers in the Web3 marketplace
           </p>
-          <Link 
-            to="/marketplace/sell" 
+          <Link
+            to="/marketplace/sell"
             style={{
               display: 'inline-block',
               background: 'white',
-              color: '#667eea',
-              padding: '15px 30px',
-              borderRadius: '8px',
+              color: '#6366f1',
+              padding: '16px 32px',
+              borderRadius: '12px',
               textDecoration: 'none',
               fontWeight: '600',
               fontSize: '1.1rem',
-              transition: 'transform 0.2s ease'
+              transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
             }}
-            onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-            onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+            onMouseOver={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 8px 20px rgba(0, 0, 0, 0.2)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+            }}
           >
             List Your First Item
           </Link>

@@ -31,12 +31,12 @@ function App() {
         left: 0,
         width: '100%',
         height: '100%',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         color: 'white',
-        fontFamily: 'Segoe UI, Tahoma, Geneva, Verdana, sans-serif'
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
       }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{
@@ -48,7 +48,7 @@ function App() {
             animation: 'spin 1s ease-in-out infinite',
             marginBottom: '20px'
           }}></div>
-          <div style={{ fontSize: '1.2rem', fontWeight: '500' }}>
+          <div style={{ fontSize: '1.2rem', fontWeight: '600' }}>
             Loading Crypto Merchant Store...
           </div>
         </div>

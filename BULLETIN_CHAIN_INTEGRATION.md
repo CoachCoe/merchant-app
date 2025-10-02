@@ -6,6 +6,31 @@ The storage abstraction layer has been implemented to prepare for Polkadot Bulle
 
 **Status**: ✅ **Ready for Bulletin Chain when it launches**
 
+## Tiered Storage Architecture (Per Design Doc)
+
+Your design doc specifies a **3-layer storage approach**:
+
+### Layer 1: On-Chain Registry (Permanent)
+- Product ID, seller wallet, price
+- **IPFS/Bulletin hash** (content identifier)
+- Implemented: `ProductRegistryService.ts`
+
+### Layer 2: IPFS + Pinning Service (Permanent)
+- Product metadata, images, store profiles
+- Permanent storage via Pinata
+- Implemented: `IPFSStorageService.ts`
+
+### Layer 3: Bulletin Chain (2-Week Cache)
+- Same content as IPFS (performance cache)
+- **10-day re-submission strategy** for freshness
+- Implemented: `BulletinChainStorageService.ts` + `BulletinResubmissionService.ts`
+
+**Flow**:
+1. Merchant uploads → IPFS (permanent) + Bulletin (cache)
+2. On-chain registry stores IPFS hash
+3. Buyers fetch from Bulletin first (fast), fallback to IPFS
+4. Every ~10 days, auto-resubmit to Bulletin to maintain cache
+
 ## What Was Implemented
 
 ### 1. Storage Abstraction Layer

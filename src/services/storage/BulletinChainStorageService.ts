@@ -30,6 +30,7 @@ export class BulletinChainStorageService implements IStorageService {
   private api: ApiPromise | null = null;
   private wsEndpoint: string;
   private defaultTTL: number = 14 * 24 * 60 * 60; // 2 weeks in seconds
+  private resubmitThreshold: number = 10 * 24 * 60 * 60; // 10 days in seconds (before expiry)
   private ipfsGateways: string[];
 
   constructor() {
@@ -198,6 +199,42 @@ export class BulletinChainStorageService implements IStorageService {
 
   getProviderType(): 'ipfs' | 'bulletin' {
     return 'bulletin';
+  }
+
+  /**
+   * Check if content needs re-submission to Bulletin Chain
+   * Returns true if content was uploaded more than 10 days ago (approaching 14-day expiry)
+   */
+  needsResubmission(uploadedAt: string): boolean {
+    const uploadTime = new Date(uploadedAt).getTime();
+    const now = Date.now();
+    const ageSeconds = (now - uploadTime) / 1000;
+
+    return ageSeconds >= this.resubmitThreshold;
+  }
+
+  /**
+   * Get time until re-submission is needed (in seconds)
+   */
+  getTimeUntilResubmission(uploadedAt: string): number {
+    const uploadTime = new Date(uploadedAt).getTime();
+    const now = Date.now();
+    const ageSeconds = (now - uploadTime) / 1000;
+    const remaining = this.resubmitThreshold - ageSeconds;
+
+    return Math.max(0, remaining);
+  }
+
+  /**
+   * Get time until content expires (in seconds)
+   */
+  getTimeUntilExpiry(uploadedAt: string): number {
+    const uploadTime = new Date(uploadedAt).getTime();
+    const now = Date.now();
+    const ageSeconds = (now - uploadTime) / 1000;
+    const remaining = this.defaultTTL - ageSeconds;
+
+    return Math.max(0, remaining);
   }
 
   /**

@@ -9,7 +9,7 @@ export interface WalletConnectionResult {
 }
 
 export class WalletConnectService {
-  private client: SignClient | null = null;
+  private client: Awaited<ReturnType<typeof SignClient.init>> | null = null;
   private projectId: string;
 
   constructor() {
@@ -112,7 +112,7 @@ export class WalletConnectService {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   }
 
-  async getActiveSessions() {
+  async getActiveSessions(): Promise<any[]> {
     if (!this.client) {
       return [];
     }

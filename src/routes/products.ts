@@ -143,14 +143,9 @@ router.put('/:id', async (req: Request, res: Response) => {
 router.delete('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const success = await productService.deleteProduct(id);
-    
-    if (!success) {
-      return res.status(404).json({
-        success: false,
-        message: 'Product not found'
-      });
-    }
+    await productService.deleteProduct(id);
+
+    // deleteProduct throws error if not found, so if we reach here it succeeded
 
     res.json({
       success: true,

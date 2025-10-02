@@ -32,7 +32,7 @@ describe('SessionService', () => {
       const sessionId = sessionService.createSession(mockRequest as Request);
 
       expect(sessionId).toBeDefined();
-      expect(sessionId).toMatch(/^[a-f0-9]{32}$/); // UUID without hyphens
+      expect(sessionId).toMatch(/^[a-f0-9]{64}$/); // SHA-256 hash
 
       const session = sessionService.getSession(sessionId);
       expect(session).toBeDefined();

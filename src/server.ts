@@ -58,7 +58,7 @@ const generalRateLimit = createRateLimit(15 * 60 * 1000, 100, 'Too many requests
 
 expressApp.use(generalRateLimit);
 
-const reactBuildDir = path.join(__dirname, '..');
+const reactBuildDir = path.join(__dirname, '..', 'dist');
 
 expressApp.use(express.static(reactBuildDir));
 logger.info(`Serving React build files from: ${reactBuildDir}`);
@@ -167,7 +167,7 @@ expressApp.get('*', (req, res) => {
     return notFoundHandler(req, res);
   }
 
-  res.sendFile(path.join(__dirname, '..', 'index.html'));
+  res.sendFile(path.join(reactBuildDir, 'index.html'));
 });
 
 expressApp.use(notFoundHandler);

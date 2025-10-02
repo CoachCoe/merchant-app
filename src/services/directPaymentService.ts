@@ -66,11 +66,11 @@ export class DirectPaymentService {
     try {
       const balance = await this.api!.query.assets.account(this.hollarAssetId, address);
 
-      if (balance.isNone) {
+      if ((balance as any).isNone) {
         return 0n;
       }
 
-      const accountData = balance.unwrap();
+      const accountData = (balance as any).unwrap();
       return BigInt(accountData.balance.toString());
     } catch (error) {
       logger.error('Failed to query Hollar balance', error);

@@ -97,7 +97,7 @@ export class ProductRegistryService {
     const contractWithSigner = this.contract!.connect(signer);
 
     try {
-      const tx = await contractWithSigner.createStore(name, ipfsProfileHash);
+      const tx = await (contractWithSigner as any).createStore(name, ipfsProfileHash);
       const receipt = await tx.wait();
 
       logger.info('Store created on-chain', {
@@ -127,7 +127,7 @@ export class ProductRegistryService {
     const contractWithSigner = this.contract!.connect(signer);
 
     try {
-      const tx = await contractWithSigner.registerProduct(
+      const tx = await (contractWithSigner as any).registerProduct(
         name,
         ipfsMetadataHash,
         priceHollar,
@@ -260,7 +260,7 @@ export class ProductRegistryService {
     const contractWithSigner = this.contract!.connect(signer);
 
     try {
-      const tx = await contractWithSigner.updateProduct(
+      const tx = await (contractWithSigner as any).updateProduct(
         productId,
         ipfsMetadataHash,
         priceHollar,
@@ -289,7 +289,7 @@ export class ProductRegistryService {
     const contractWithSigner = this.contract!.connect(signer);
 
     try {
-      const tx = await contractWithSigner.deactivateProduct(productId);
+      const tx = await (contractWithSigner as any).deactivateProduct(productId);
       const receipt = await tx.wait();
 
       logger.info('Product deactivated on-chain', {

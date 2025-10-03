@@ -3,8 +3,10 @@ import { ProductService } from '../../../src/services/productService';
 import { DatabaseService } from '../../../src/services/databaseService';
 import { CreateProductRequest } from '../../../src/models/Product';
 
-// Mock database
+// Mock all dependencies
 jest.mock('../../../src/services/databaseService');
+jest.mock('../../../src/services/productRegistryService');
+jest.mock('../../../src/services/storage/IPFSStorageService');
 jest.mock('../../../src/utils/logger', () => ({
   logger: {
     info: jest.fn(),
@@ -107,7 +109,7 @@ describe('ProductService', () => {
   });
 
   describe('getProductById', () => {
-    it('should return product by ID', async () => {
+    it('should return product from cache if fresh', async () => {
       const mockProduct = {
         id: 'prod-123',
         title: 'Test Product',
@@ -122,24 +124,53 @@ describe('ProductService', () => {
         views: 0,
         purchases: 0,
         createdAt: '2025-10-02T12:00:00.000Z',
-        updatedAt: '2025-10-02T12:00:00.000Z'
+        updatedAt: new Date().toISOString() // Fresh cache
       };
 
-      mockDb.get.mockReturnValueOnce(mockProduct);
+      mockDb.get.mockReturnValue(mockProduct);
 
       const result = await productService.getProductById('prod-123');
 
       expect(result).toBeDefined();
       expect(result?.id).toBe('prod-123');
       expect(result?.title).toBe('Test Product');
+      // Should serve from cache, not query blockchain
     });
 
     it('should return null for non-existent product', async () => {
-      mockDb.get.mockReturnValueOnce(undefined);
+      mockDb.get.mockReturnValue(undefined);
 
       const result = await productService.getProductById('non-existent');
 
       expect(result).toBeNull();
+    });
+
+    it('should return cached product if no onChainId exists', async () => {
+      const mockProduct = {
+        id: 'prod-123',
+        onChainId: null, // No blockchain record
+        title: 'Local Only Product',
+        description: 'Description',
+        priceHollar: 100,
+        categoryId: 'cat-1',
+        images: JSON.stringify([]),
+        sellerWalletAddress: '0x123',
+        ipfsMetadataHash: 'QmTest',
+        blockchainVerified: 0,
+        isActive: 1,
+        views: 0,
+        purchases: 0,
+        createdAt: '2025-10-01T12:00:00.000Z',
+        updatedAt: '2025-10-01T12:00:00.000Z' // Stale cache
+      };
+
+      mockDb.get.mockReturnValue(mockProduct);
+
+      const result = await productService.getProductById('prod-123');
+
+      expect(result).toBeDefined();
+      expect(result?.title).toBe('Local Only Product');
+      // Should return cached version since no blockchain record
     });
   });
 

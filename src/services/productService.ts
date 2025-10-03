@@ -1,11 +1,32 @@
 import { DatabaseService } from './databaseService.js';
 import { Product, CreateProductRequest, UpdateProductRequest, ProductListResponse } from '../models/Product.js';
+import { ProductRegistryService, OnChainProduct } from './productRegistryService.js';
+import { IPFSStorageService } from './storage/IPFSStorageService.js';
+import { ProductMetadata } from './storage/IStorageService.js';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../utils/logger.js';
 
+/**
+ * ProductService - Blockchain-first architecture
+ *
+ * Data flow:
+ * 1. Query ProductRegistry smart contract (source of truth)
+ * 2. Fetch metadata from IPFS
+ * 3. Cache in SQLite for performance
+ * 4. Serve from cache with TTL-based invalidation
+ */
 export class ProductService {
   private db = DatabaseService.getInstance().getDatabase();
+  private registry = new ProductRegistryService();
+  private ipfs = new IPFSStorageService();
+  private cacheTTL = 300; // 5 minutes cache TTL (in seconds)
 
+  /**
+   * Get products list - Uses cache with optional blockchain refresh
+   *
+   * For now, serves from cache for performance.
+   * Use refreshProductsFromBlockchain() to sync cache with on-chain state.
+   */
   async getProducts(options: {
     page?: number;
     limit?: number;
@@ -89,7 +110,106 @@ export class ProductService {
     };
   }
 
-  async getProductById(id: string): Promise<Product | null> {
+  /**
+   * Refresh all products from blockchain (indexer sync)
+   *
+   * Queries all active products from ProductRegistry and updates cache
+   */
+  async refreshProductsFromBlockchain(): Promise<{ synced: number; errors: number }> {
+    try {
+      await this.registry.initialize();
+
+      // Get all active product IDs from blockchain
+      const productIds = await this.registry.getAllActiveProducts();
+
+      logger.info('Syncing products from blockchain', { count: productIds.length });
+
+      let synced = 0;
+      let errors = 0;
+
+      for (const onChainId of productIds) {
+        try {
+          const onChainProduct = await this.registry.getProduct(onChainId);
+          const metadata = await this.ipfs.fetchProductMetadata(onChainProduct.ipfsMetadataHash);
+
+          // Find or create local ID
+          const existing = this.db.prepare('SELECT id FROM products WHERE on_chain_id = ?').get(onChainId) as { id: string } | undefined;
+          const localId = existing?.id || uuidv4();
+
+          const product = this.mergeBlockchainData(localId, onChainProduct, metadata);
+          this.updateCache(product);
+
+          synced++;
+        } catch (error) {
+          logger.warn('Failed to sync product', { onChainId, error });
+          errors++;
+        }
+      }
+
+      logger.info('Blockchain sync complete', { synced, errors });
+      return { synced, errors };
+    } catch (error) {
+      logger.error('Failed to refresh products from blockchain', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get product by ID - Blockchain-first with cache fallback
+   *
+   * Flow:
+   * 1. Check cache (if fresh, return)
+   * 2. Query blockchain (ProductRegistry contract)
+   * 3. Fetch metadata from IPFS
+   * 4. Update cache
+   * 5. Return product
+   */
+  async getProductById(id: string, options: { forceRefresh?: boolean } = {}): Promise<Product | null> {
+    // Try cache first (unless force refresh)
+    if (!options.forceRefresh) {
+      const cached = this.getFromCache(id);
+      if (cached && this.isCacheFresh(cached.updatedAt)) {
+        logger.debug('Product served from cache', { id });
+        return cached;
+      }
+    }
+
+    // Try to find on-chain ID from cache
+    const cachedProduct = this.getFromCache(id);
+    const onChainId = cachedProduct?.onChainId;
+
+    if (!onChainId) {
+      logger.debug('Product not found on-chain, serving from cache only', { id });
+      return cachedProduct;
+    }
+
+    try {
+      // Query blockchain as source of truth
+      const onChainProduct = await this.registry.getProduct(onChainId);
+
+      // Fetch full metadata from IPFS
+      const metadata = await this.ipfs.fetchProductMetadata(onChainProduct.ipfsMetadataHash);
+
+      // Merge on-chain + IPFS data
+      const product = this.mergeBlockchainData(id, onChainProduct, metadata);
+
+      // Update cache
+      this.updateCache(product);
+
+      logger.info('Product refreshed from blockchain', { id, onChainId });
+      return product;
+    } catch (error) {
+      logger.warn('Failed to fetch from blockchain, using cache', { id, error });
+
+      // Fallback to cache on blockchain error
+      return cachedProduct;
+    }
+  }
+
+  /**
+   * Get product from cache only
+   */
+  private getFromCache(id: string): Product | null {
     const query = `
       SELECT
         p.id,
@@ -125,6 +245,125 @@ export class ProductService {
     }
 
     return this.mapRowToProduct(row);
+  }
+
+  /**
+   * Check if cache is fresh (within TTL)
+   */
+  private isCacheFresh(updatedAt: string): boolean {
+    const updated = new Date(updatedAt).getTime();
+    const now = Date.now();
+    const ageSeconds = (now - updated) / 1000;
+
+    return ageSeconds < this.cacheTTL;
+  }
+
+  /**
+   * Merge on-chain data with IPFS metadata
+   */
+  private mergeBlockchainData(
+    localId: string,
+    onChainProduct: OnChainProduct,
+    metadata: ProductMetadata
+  ): Product {
+    // Validate delivery type
+    const validDeliveryTypes = ['download', 'email', 'ipfs'];
+    const deliveryType = validDeliveryTypes.includes(metadata.delivery_type)
+      ? (metadata.delivery_type as 'download' | 'email' | 'ipfs')
+      : undefined;
+
+    return {
+      id: localId,
+      onChainId: onChainProduct.id,
+      title: onChainProduct.name,
+      description: metadata.description || '',
+      priceHollar: Number(onChainProduct.priceHollar),
+      categoryId: onChainProduct.category,
+      images: metadata.images || [],
+      sellerWalletAddress: onChainProduct.seller,
+      ipfsMetadataHash: onChainProduct.ipfsMetadataHash,
+      blockchainVerified: true,
+      digitalDeliveryType: deliveryType,
+      digitalDeliveryInstructions: metadata.delivery_instructions,
+      variants: metadata.variants,
+      tags: undefined, // Tags not in IPFS metadata schema yet
+      isActive: onChainProduct.isActive,
+      createdAt: new Date(Number(onChainProduct.createdAt) * 1000).toISOString(),
+      updatedAt: new Date().toISOString(),
+      views: 0,
+      purchases: 0
+    };
+  }
+
+  /**
+   * Update cache with fresh blockchain data
+   */
+  private updateCache(product: Product): void {
+    const existing = this.getFromCache(product.id);
+
+    if (existing) {
+      // Update existing cache entry
+      this.db.prepare(`
+        UPDATE products SET
+          title = ?,
+          description = ?,
+          price_hollar = ?,
+          category_id = ?,
+          images = ?,
+          seller_wallet_address = ?,
+          ipfs_metadata_hash = ?,
+          blockchain_verified = 1,
+          digital_delivery_type = ?,
+          digital_delivery_instructions = ?,
+          variants = ?,
+          tags = ?,
+          is_active = ?,
+          updated_at = ?
+        WHERE id = ?
+      `).run(
+        product.title,
+        product.description,
+        product.priceHollar,
+        product.categoryId,
+        JSON.stringify(product.images),
+        product.sellerWalletAddress,
+        product.ipfsMetadataHash,
+        product.digitalDeliveryType || null,
+        product.digitalDeliveryInstructions || null,
+        product.variants ? JSON.stringify(product.variants) : null,
+        product.tags ? JSON.stringify(product.tags) : null,
+        product.isActive ? 1 : 0,
+        product.updatedAt,
+        product.id
+      );
+    } else {
+      // Insert new cache entry
+      this.db.prepare(`
+        INSERT INTO products (
+          id, on_chain_id, title, description, price_hollar, category_id,
+          images, seller_wallet_address, ipfs_metadata_hash, blockchain_verified,
+          digital_delivery_type, digital_delivery_instructions, variants, tags,
+          is_active, created_at, updated_at, views, purchases
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, 0, 0)
+      `).run(
+        product.id,
+        product.onChainId || null,
+        product.title,
+        product.description,
+        product.priceHollar,
+        product.categoryId,
+        JSON.stringify(product.images),
+        product.sellerWalletAddress,
+        product.ipfsMetadataHash,
+        product.digitalDeliveryType || null,
+        product.digitalDeliveryInstructions || null,
+        product.variants ? JSON.stringify(product.variants) : null,
+        product.tags ? JSON.stringify(product.tags) : null,
+        product.isActive ? 1 : 0,
+        product.createdAt,
+        product.updatedAt
+      );
+    }
   }
 
   async createProduct(request: CreateProductRequest): Promise<Product> {

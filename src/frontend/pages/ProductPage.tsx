@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useCart } from '../hooks/useCart';
 import { Product } from '../../models/Product';
+import { SellerReputation } from '../components/SellerReputation';
+import '../styles/SellerReputation.css';
 
 const ProductPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -123,13 +125,22 @@ const ProductPage: React.FC = () => {
                 </span>
               </div>
 
-              <h1 style={{ 
-                fontSize: '2.5rem', 
-                marginBottom: '20px',
+              <h1 style={{
+                fontSize: '2.5rem',
+                marginBottom: '15px',
                 color: '#333'
               }}>
                 {product.name}
               </h1>
+
+              {product.sellerWalletAddress && (
+                <div style={{ marginBottom: '20px' }}>
+                  <SellerReputation
+                    sellerWalletAddress={product.sellerWalletAddress}
+                    compact={false}
+                  />
+                </div>
+              )}
 
               <div style={{ 
                 fontSize: '2rem', 

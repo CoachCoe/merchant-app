@@ -2,6 +2,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Product } from '../../../models/Product';
 import { useCart } from '../../hooks/useCart';
+import { SellerReputation } from '../SellerReputation';
+import '../../styles/SellerReputation.css';
 
 interface ProductCardProps {
   product: Product;
@@ -63,9 +65,9 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           {product.name}
         </h3>
         
-        <p style={{ 
-          color: '#666', 
-          marginBottom: '15px',
+        <p style={{
+          color: '#666',
+          marginBottom: '10px',
           display: '-webkit-box',
           WebkitLineClamp: 2,
           WebkitBoxOrient: 'vertical',
@@ -73,7 +75,16 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         }}>
           {product.description}
         </p>
-        
+
+        {product.sellerWalletAddress && (
+          <div style={{ marginBottom: '10px' }}>
+            <SellerReputation
+              sellerWalletAddress={product.sellerWalletAddress}
+              compact={true}
+            />
+          </div>
+        )}
+
         <div style={{ 
           display: 'flex', 
           justifyContent: 'space-between', 

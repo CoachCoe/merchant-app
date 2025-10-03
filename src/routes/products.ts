@@ -161,4 +161,31 @@ router.delete('/:id', async (req: Request, res: Response) => {
   }
 });
 
+// POST /api/products/sync/blockchain - Sync products from blockchain (admin)
+router.post('/sync/blockchain',
+  sessionMiddleware.sessionHandler,
+  sessionMiddleware.requireAdmin,
+  sessionMiddleware.logAdminAction('sync_blockchain'),
+  async (req: Request, res: Response) => {
+    try {
+      logger.info('Starting blockchain sync...');
+
+      const result = await productService.refreshProductsFromBlockchain();
+
+      res.json({
+        success: true,
+        data: result,
+        message: `Blockchain sync complete: ${result.synced} products synced, ${result.errors} errors`
+      });
+    } catch (error) {
+      logger.error('Error syncing from blockchain', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to sync from blockchain',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
+);
+
 export { router as productRoutes };

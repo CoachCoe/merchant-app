@@ -1,11 +1,7 @@
 import Database from 'better-sqlite3';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import { logger } from '../utils/logger.js';
 import fs from 'fs';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 export class DatabaseService {
   private static instance: DatabaseService;
@@ -13,7 +9,7 @@ export class DatabaseService {
 
   private constructor() {
     // Use SQLite for development, can be configured for PostgreSQL in production
-    const dbPath = process.env.DATABASE_PATH || path.join(__dirname, '../../data/merchant.db');
+    const dbPath = process.env.DATABASE_PATH || path.join(process.cwd(), 'data/merchant.db');
     
     // Ensure data directory exists
     const dataDir = path.dirname(dbPath);
@@ -118,12 +114,31 @@ export class DatabaseService {
         amount_hollar INTEGER NOT NULL,
         payment_tx_hash TEXT NOT NULL UNIQUE,
         block_number INTEGER,
-        delivery_token TEXT,
-        token_expires_at DATETIME,
         delivered_at DATETIME,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (product_id) REFERENCES products(id)
       )
+    `);
+
+    // Delivery tokens table (secure one-time delivery tokens)
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS delivery_tokens (
+        token TEXT PRIMARY KEY,
+        purchase_id TEXT NOT NULL,
+        product_id TEXT NOT NULL,
+        buyer_wallet_address TEXT NOT NULL,
+        expires_at DATETIME NOT NULL,
+        redeemed_at DATETIME,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (purchase_id) REFERENCES purchases(id),
+        FOREIGN KEY (product_id) REFERENCES products(id)
+      )
+    `);
+
+    // Index for token cleanup queries
+    this.db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_delivery_tokens_expires
+      ON delivery_tokens(expires_at, redeemed_at)
     `);
 
     // Shopping carts table

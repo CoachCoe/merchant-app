@@ -118,12 +118,31 @@ export class DatabaseService {
         amount_hollar INTEGER NOT NULL,
         payment_tx_hash TEXT NOT NULL UNIQUE,
         block_number INTEGER,
-        delivery_token TEXT,
-        token_expires_at DATETIME,
         delivered_at DATETIME,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (product_id) REFERENCES products(id)
       )
+    `);
+
+    // Delivery tokens table (secure one-time delivery tokens)
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS delivery_tokens (
+        token TEXT PRIMARY KEY,
+        purchase_id TEXT NOT NULL,
+        product_id TEXT NOT NULL,
+        buyer_wallet_address TEXT NOT NULL,
+        expires_at DATETIME NOT NULL,
+        redeemed_at DATETIME,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (purchase_id) REFERENCES purchases(id),
+        FOREIGN KEY (product_id) REFERENCES products(id)
+      )
+    `);
+
+    // Index for token cleanup queries
+    this.db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_delivery_tokens_expires
+      ON delivery_tokens(expires_at, redeemed_at)
     `);
 
     // Shopping carts table

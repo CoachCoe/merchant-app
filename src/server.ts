@@ -19,6 +19,8 @@ import { DatabaseService } from './services/databaseService.js';
 import { productRoutes } from './routes/products.js';
 import { categoryRoutes } from './routes/categories.js';
 import { cartRoutes } from './routes/cart.js';
+import { deliveryRoutes } from './routes/delivery.js';
+import { sellerRoutes } from './routes/sellers.js';
 import marketplaceRoutes from './routes/marketplace.js';
 import { APP_CONFIG } from './config/constants.js';
 
@@ -150,6 +152,16 @@ expressApp.use('/api/cart',
 expressApp.use('/api/marketplace',
   createRateLimit(APP_CONFIG.RATE_LIMIT.WINDOW_MS, APP_CONFIG.RATE_LIMIT.MAX_REQUESTS.GENERAL, 'Too many marketplace requests'),
   marketplaceRoutes
+);
+
+expressApp.use('/api/delivery',
+  createRateLimit(APP_CONFIG.RATE_LIMIT.WINDOW_MS, APP_CONFIG.RATE_LIMIT.MAX_REQUESTS.GENERAL, 'Too many delivery requests'),
+  deliveryRoutes
+);
+
+expressApp.use('/api/sellers',
+  createRateLimit(APP_CONFIG.RATE_LIMIT.WINDOW_MS, APP_CONFIG.RATE_LIMIT.MAX_REQUESTS.GENERAL, 'Too many seller requests'),
+  sellerRoutes
 );
 
 expressApp.get('/health', (req, res) => {

@@ -16,6 +16,7 @@ import {
 } from './utils/security.js';
 import { logger } from './utils/logger.js';
 import { DatabaseService } from './services/databaseService.js';
+import { getBlockchainSyncService } from './services/blockchainSyncService.js';
 import { productRoutes } from './routes/products.js';
 import { categoryRoutes } from './routes/categories.js';
 import { cartRoutes } from './routes/cart.js';
@@ -193,6 +194,16 @@ async function startServerAndApp() {
             logger.info('Initializing database service...');
             DatabaseService.getInstance();
             logger.info('Database service initialized');
+
+            // Start blockchain sync service if enabled
+            if (process.env.ENABLE_BLOCKCHAIN_SYNC !== 'false') {
+                logger.info('Starting blockchain sync service...');
+                const syncService = getBlockchainSyncService();
+                syncService.start();
+                logger.info('Blockchain sync service started');
+            } else {
+                logger.info('Blockchain sync service disabled (ENABLE_BLOCKCHAIN_SYNC=false)');
+            }
         } catch (error) {
             logger.error('Failed to initialize services', error);
             throw error;
@@ -210,6 +221,17 @@ async function startServerAndApp() {
 
 function shutdown(signal: string) {
     logger.info(`Received ${signal}. Shutting down gracefully...`);
+
+    // Stop blockchain sync service
+    try {
+        const syncService = getBlockchainSyncService();
+        if (syncService.isActive()) {
+            syncService.stop();
+            logger.info('Blockchain sync service stopped');
+        }
+    } catch (error) {
+        logger.warn('Error stopping blockchain sync service', error);
+    }
 
     clients.forEach(client => {
         if (client.readyState === WebSocket.OPEN) {

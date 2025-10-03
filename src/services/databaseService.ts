@@ -1,11 +1,7 @@
 import Database from 'better-sqlite3';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import { logger } from '../utils/logger.js';
 import fs from 'fs';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 export class DatabaseService {
   private static instance: DatabaseService;
@@ -13,7 +9,7 @@ export class DatabaseService {
 
   private constructor() {
     // Use SQLite for development, can be configured for PostgreSQL in production
-    const dbPath = process.env.DATABASE_PATH || path.join(__dirname, '../../data/merchant.db');
+    const dbPath = process.env.DATABASE_PATH || path.join(process.cwd(), 'data/merchant.db');
     
     // Ensure data directory exists
     const dataDir = path.dirname(dbPath);

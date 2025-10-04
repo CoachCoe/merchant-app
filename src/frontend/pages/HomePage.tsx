@@ -39,6 +39,20 @@ const HomePage: React.FC = () => {
         }}>
           Decentralized marketplace powered by Polkadot. Buy and sell digital goods with cryptocurrency.
         </p>
+
+        {/* Connect Wallet Button */}
+        <button
+          className="btn btn-primary"
+          style={{
+            marginBottom: '48px',
+            padding: '16px 32px',
+            fontSize: '1rem'
+          }}
+          onClick={() => alert('Wallet connection coming soon!')}
+        >
+          Connect Wallet
+        </button>
+
         <div style={{
           display: 'flex',
           gap: '48px',

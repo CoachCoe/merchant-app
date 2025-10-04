@@ -29,7 +29,7 @@ const BlockchainContext = createContext<BlockchainContextValue | undefined>(unde
  * BlockchainProvider - Manages blockchain connection state
  */
 export function BlockchainProvider({ children }: { children: ReactNode }) {
-  const [queryMode, setQueryMode] = useState<QueryMode>('cached');
+  const [queryMode, setQueryMode] = useState<QueryMode>('direct');
   const [isBlockchainReady, setIsBlockchainReady] = useState(false);
   const [contractAddress, setContractAddress] = useState<string | null>(null);
   const [rpcUrl, setRpcUrl] = useState<string | null>(null);

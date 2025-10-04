@@ -81,9 +81,6 @@ const Header: React.FC = () => {
             </Link>
           </nav>
         </div>
-        <div style={{ marginTop: '16px' }}>
-          <QueryModeToggle />
-        </div>
       </div>
     </header>
   );

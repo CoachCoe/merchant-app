@@ -26,10 +26,8 @@ const Footer: React.FC = () => {
           <div>
             <h3>Connect</h3>
             <p style={{ lineHeight: '2' }}>
-              Documentation<br/>
-              GitHub<br/>
-              Support<br/>
-              Twitter
+              <a href="https://drive.google.com/drive/folders/1S7tPG5i-ld8k9gPeNFnLuYfXByuz7JKa?usp=drive_link" target="_blank" rel="noopener noreferrer" style={{ color: '#64748b', textDecoration: 'none', transition: 'color 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.color = '#0f172a'} onMouseLeave={(e) => e.currentTarget.style.color = '#64748b'}>Documentation</a><br/>
+              <a href="https://github.com/CoachCoe/3Bay" target="_blank" rel="noopener noreferrer" style={{ color: '#64748b', textDecoration: 'none', transition: 'color 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.color = '#0f172a'} onMouseLeave={(e) => e.currentTarget.style.color = '#64748b'}>GitHub</a><br/>
             </p>
           </div>
         </div>

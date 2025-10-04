@@ -172,10 +172,34 @@ const CartPage: React.FC = () => {
                   <span>{formatPrice(cart.total)}</span>
                 </div>
               </div>
-              
+
+              {/* Connect Wallet Section */}
+              <div style={{
+                marginTop: '24px',
+                padding: '16px',
+                background: '#f1f5f9',
+                borderRadius: '12px',
+                textAlign: 'center'
+              }}>
+                <div style={{
+                  fontSize: '0.875rem',
+                  color: '#64748b',
+                  marginBottom: '12px'
+                }}>
+                  Connect your wallet to checkout
+                </div>
+                <button
+                  className="btn btn-primary"
+                  style={{ width: '100%', marginBottom: '12px' }}
+                  onClick={() => alert('Wallet connection coming soon!')}
+                >
+                  Connect Wallet
+                </button>
+              </div>
+
               <div style={{ marginTop: '20px' }}>
-                <Link 
-                  to="/checkout" 
+                <Link
+                  to="/checkout"
                   className="btn btn-primary"
                   style={{ width: '100%', textAlign: 'center' }}
                 >

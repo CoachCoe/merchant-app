@@ -1,4 +1,4 @@
-# eShop v0.1 - Anonymous Web3 Marketplace (MVP)
+# 3Bay v0.1 - Anonymous Web3 Marketplace (MVP)
 
 A decentralized marketplace enabling anonymous buying and selling of digital goods using cryptocurrency payments through the Polkadot ecosystem.
 

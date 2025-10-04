@@ -57,25 +57,26 @@ function App() {
         left: 0,
         width: '100%',
         height: '100%',
-        background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+        background: 'white',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        color: 'white',
+        color: '#0f172a',
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
       }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{
-            width: '50px',
-            height: '50px',
-            border: '4px solid rgba(255, 255, 255, 0.3)',
+            width: '40px',
+            height: '40px',
+            border: '3px solid #e5e7eb',
             borderRadius: '50%',
-            borderTopColor: 'white',
-            animation: 'spin 1s ease-in-out infinite',
-            marginBottom: '20px'
+            borderTopColor: '#0f172a',
+            animation: 'spin 0.8s linear infinite',
+            marginBottom: '20px',
+            margin: '0 auto 20px'
           }}></div>
-          <div style={{ fontSize: '1.2rem', fontWeight: '600' }}>
-            Loading Crypto Merchant Store...
+          <div style={{ fontSize: '0.875rem', fontWeight: '600', letterSpacing: '-0.01em' }}>
+            3Bay Marketplace
           </div>
         </div>
       </div>

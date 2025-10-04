@@ -12,40 +12,64 @@ const Header: React.FC = () => {
       <div className="container">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <Link to="/" style={{ textDecoration: 'none', color: 'white' }}>
-              <h1>🛒 Crypto Merchant Store</h1>
+            <Link to="/" style={{ textDecoration: 'none', color: '#0f172a' }}>
+              <h1 style={{ fontSize: '1.25rem', fontWeight: '700', letterSpacing: '-0.02em' }}>
+                3Bay Marketplace
+              </h1>
             </Link>
-            <p>Accept DOT & KSM payments for your products</p>
+            <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '2px' }}>
+              Web3 Marketplace
+            </p>
           </div>
-          
-          <nav style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-            <Link to="/" style={{ color: 'white', textDecoration: 'none', fontWeight: '500' }}>
+
+          <nav style={{ display: 'flex', gap: '32px', alignItems: 'center' }}>
+            <Link to="/" style={{
+              color: '#64748b',
+              textDecoration: 'none',
+              fontWeight: '500',
+              fontSize: '0.875rem',
+              transition: 'color 0.2s'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.color = '#0f172a'}
+            onMouseLeave={(e) => e.currentTarget.style.color = '#64748b'}>
               Products
             </Link>
-            <Link to="/marketplace" style={{ color: 'white', textDecoration: 'none', fontWeight: '500' }}>
-              🌐 Marketplace
+            <Link to="/marketplace" style={{
+              color: '#64748b',
+              textDecoration: 'none',
+              fontWeight: '500',
+              fontSize: '0.875rem',
+              transition: 'color 0.2s'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.color = '#0f172a'}
+            onMouseLeave={(e) => e.currentTarget.style.color = '#64748b'}>
+              Marketplace
             </Link>
-            <Link 
-              to="/cart" 
-              style={{ 
-                color: 'white', 
-                textDecoration: 'none', 
+            <Link
+              to="/cart"
+              style={{
+                color: '#64748b',
+                textDecoration: 'none',
                 fontWeight: '500',
-                position: 'relative'
+                fontSize: '0.875rem',
+                position: 'relative',
+                transition: 'color 0.2s'
               }}
+              onMouseEnter={(e) => e.currentTarget.style.color = '#0f172a'}
+              onMouseLeave={(e) => e.currentTarget.style.color = '#64748b'}
             >
-              🛒 Cart
+              Cart
               {itemCount > 0 && (
                 <span style={{
                   position: 'absolute',
                   top: '-8px',
-                  right: '-8px',
-                  background: '#ff4757',
+                  right: '-12px',
+                  background: '#0f172a',
                   color: 'white',
-                  borderRadius: '50%',
-                  width: '20px',
-                  height: '20px',
-                  fontSize: '12px',
+                  borderRadius: '9999px',
+                  width: '18px',
+                  height: '18px',
+                  fontSize: '11px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -54,9 +78,6 @@ const Header: React.FC = () => {
                   {itemCount}
                 </span>
               )}
-            </Link>
-            <Link to="/admin" style={{ color: 'white', textDecoration: 'none', fontWeight: '500' }}>
-              ⚙️ Admin
             </Link>
           </nav>
         </div>

@@ -1,5 +1,6 @@
 import { SUPPORTED_CHAINS, COINGECKO_API_BASE_URL } from '../config/index.js';
 import { TokenWithPrice } from '../types/index.js';
+import { logger } from '../utils/logger.js';
 
 export class PolkadotPriceService {
   private static priceCache: Map<string, { price: number; timestamp: number }> = new Map();
@@ -36,7 +37,7 @@ export class PolkadotPriceService {
         return token;
       });
     } catch (error) {
-      console.error('❌ Failed to fetch token prices:', error);
+      logger.error('Failed to fetch token prices', error);
       return tokens;
     }
   }
@@ -61,7 +62,7 @@ export class PolkadotPriceService {
           this.priceCache.set(coinId, { price, timestamp: Date.now() });
         }
       } catch (error) {
-        console.error(`❌ Failed to fetch price for ${coinId}:`, error);
+        logger.error(`Failed to fetch price for ${coinId}`, error);
       }
     }
 

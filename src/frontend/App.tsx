@@ -10,6 +10,32 @@ import OrderComplete from './pages/OrderComplete';
 import MarketplaceHomePage from './pages/MarketplaceHomePage';
 import { CartProvider } from './hooks/useCart';
 import { WebSocketProvider } from './hooks/useWebSocket';
+import { BlockchainProvider, useBlockchainInit } from './hooks/useBlockchain';
+
+/**
+ * AppContent - Main app with blockchain initialization
+ */
+function AppContent() {
+  useBlockchainInit(); // Auto-initialize blockchain on mount
+
+  return (
+    <div className="App">
+      <Header />
+      <main style={{ minHeight: 'calc(100vh - 200px)' }}>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/product/:id" element={<ProductPage />} />
+          <Route path="/cart" element={<CartPage />} />
+          <Route path="/checkout" element={<CheckoutPage />} />
+          <Route path="/order-complete/:orderId" element={<OrderComplete />} />
+
+          <Route path="/marketplace" element={<MarketplaceHomePage />} />
+        </Routes>
+      </main>
+      <Footer />
+    </div>
+  );
+}
 
 function App() {
   const [isLoading, setIsLoading] = useState(true);
@@ -57,27 +83,15 @@ function App() {
   }
 
   return (
-    <WebSocketProvider>
-      <CartProvider>
-        <Router>
-          <div className="App">
-            <Header />
-            <main style={{ minHeight: 'calc(100vh - 200px)' }}>
-              <Routes>
-                <Route path="/" element={<HomePage />} />
-                <Route path="/product/:id" element={<ProductPage />} />
-                <Route path="/cart" element={<CartPage />} />
-                <Route path="/checkout" element={<CheckoutPage />} />
-                <Route path="/order-complete/:orderId" element={<OrderComplete />} />
-
-                <Route path="/marketplace" element={<MarketplaceHomePage />} />
-              </Routes>
-            </main>
-            <Footer />
-          </div>
-        </Router>
-      </CartProvider>
-    </WebSocketProvider>
+    <BlockchainProvider>
+      <WebSocketProvider>
+        <CartProvider>
+          <Router>
+            <AppContent />
+          </Router>
+        </CartProvider>
+      </WebSocketProvider>
+    </BlockchainProvider>
   );
 }
 

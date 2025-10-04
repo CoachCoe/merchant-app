@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useCart } from '../hooks/useCart';
+import { useProduct, useBlockchainContext } from '../hooks/useBlockchain';
 import { Product } from '../../models/Product';
 import { SellerReputation } from '../components/SellerReputation';
 import '../styles/SellerReputation.css';
@@ -8,37 +9,12 @@ import '../styles/SellerReputation.css';
 const ProductPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { addToCart, loading: cartLoading } = useCart();
-  const [product, setProduct] = useState<Product | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { queryMode } = useBlockchainContext();
+
+  // Use new blockchain-aware hook
+  const { product, loading, error } = useProduct(id);
+
   const [quantity, setQuantity] = useState(1);
-
-  useEffect(() => {
-    const fetchProduct = async () => {
-      if (!id) return;
-
-      try {
-        setLoading(true);
-        setError(null);
-
-        const response = await fetch(`/api/products/${id}`);
-        const data = await response.json();
-
-        if (response.ok) {
-          setProduct(data.data);
-        } else {
-          setError(data.message || 'Product not found');
-        }
-      } catch (err) {
-        setError('Failed to load product');
-        console.error('Error fetching product:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProduct();
-  }, [id]);
 
   const handleAddToCart = async () => {
     if (!product) return;
@@ -82,10 +58,20 @@ const ProductPage: React.FC = () => {
 
   return (
     <div className="container" style={{ paddingTop: '40px', paddingBottom: '40px' }}>
-      <div style={{ marginBottom: '20px' }}>
+      <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Link to="/" style={{ color: '#667eea', textDecoration: 'none' }}>
           ← Back to Products
         </Link>
+        <div style={{
+          padding: '6px 12px',
+          borderRadius: '12px',
+          fontSize: '12px',
+          fontWeight: '600',
+          backgroundColor: queryMode === 'direct' ? '#c6f6d5' : '#edf2f7',
+          color: queryMode === 'direct' ? '#22543d' : '#2d3748'
+        }}>
+          {queryMode === 'direct' ? '🔗 Blockchain Data' : '⚡ Cached Data'}
+        </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px' }}>

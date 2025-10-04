@@ -23,6 +23,7 @@ import { cartRoutes } from './routes/cart.js';
 import { deliveryRoutes } from './routes/delivery.js';
 import { sellerRoutes } from './routes/sellers.js';
 import marketplaceRoutes from './routes/marketplace.js';
+import configRoutes from './routes/config.js';
 import { APP_CONFIG } from './config/constants.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -163,6 +164,11 @@ expressApp.use('/api/delivery',
 expressApp.use('/api/sellers',
   createRateLimit(APP_CONFIG.RATE_LIMIT.WINDOW_MS, APP_CONFIG.RATE_LIMIT.MAX_REQUESTS.GENERAL, 'Too many seller requests'),
   sellerRoutes
+);
+
+expressApp.use('/api/config',
+  createRateLimit(APP_CONFIG.RATE_LIMIT.WINDOW_MS, APP_CONFIG.RATE_LIMIT.MAX_REQUESTS.GENERAL, 'Too many config requests'),
+  configRoutes
 );
 
 expressApp.get('/health', (req, res) => {

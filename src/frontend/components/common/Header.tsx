@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../../hooks/useCart';
+import { QueryModeToggle } from './QueryModeToggle';
 
 const Header: React.FC = () => {
   const { cart } = useCart();
@@ -58,6 +59,9 @@ const Header: React.FC = () => {
               ⚙️ Admin
             </Link>
           </nav>
+        </div>
+        <div style={{ marginTop: '16px' }}>
+          <QueryModeToggle />
         </div>
       </div>
     </header>

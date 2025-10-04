@@ -1,5 +1,6 @@
 import { PolkadotPriceService } from './polkadotPriceService.js';
 import { SUPPORTED_CHAINS } from '../config/index.js';
+import { logger } from '../utils/logger.js';
 
 export class PriceCacheService {
   private static cachedPrices: Map<string, { price: number; timestamp: number }> = new Map();
@@ -7,7 +8,7 @@ export class PriceCacheService {
   private static readonly REFRESH_INTERVAL_MS = 60000; // 1 minute
 
   static async initialize(): Promise<void> {
-    console.log('💰 Initializing Polkadot Price Cache Service...');
+    logger.info('Initializing Polkadot Price Cache Service');
     await this.fetchAndCacheAllPrices();
     this.startPeriodicRefresh();
   }
@@ -45,14 +46,14 @@ export class PriceCacheService {
           if (data[coinId]?.usd) {
             const price = data[coinId].usd;
             this.cachedPrices.set(coinId, { price, timestamp: Date.now() });
-            console.log(`💰 Cached price for ${coinId}: $${price}`);
+            logger.info(`Cached price for ${coinId}: $${price}`);
           }
         } catch (error) {
-          console.error(`❌ Failed to fetch price for ${coinId}:`, error);
+          logger.error(`Failed to fetch price for ${coinId}`, error);
         }
       }
     } catch (error) {
-      console.error('❌ Error fetching prices:', error);
+      logger.error('Error fetching prices', error);
     }
   }
 
@@ -65,6 +66,6 @@ export class PriceCacheService {
       clearInterval(this.refreshInterval);
       this.refreshInterval = null;
     }
-    console.log('🛑 Price Cache Service stopped');
+    logger.info('Price Cache Service stopped');
   }
 }

@@ -8,6 +8,11 @@ This is a **work-in-progress MVP** for internal Parity usage. Core marketplace f
 
 ### ✅ Implemented
 - **Blockchain-First Architecture** - ProductRegistry smart contract as source of truth
+- **🔗 Direct Mode** - Frontend can query blockchain directly (no server required for reads)
+- **⚡ IndexedDB Cache** - 150x faster repeat visits with offline support
+- **🔴 Real-Time Events** - Live blockchain event listening and notifications
+- **📊 Purchase History** - Verified on-chain sales tracking from Asset Hub
+- **Mode Toggle** - Users choose cached (fast) or direct (trustless) mode
 - **IPFS Integration** - Decentralized metadata storage (Pinata)
 - **Bulletin Chain Support** - Ready for Q4 2025 launch (2-week ephemeral storage)
 - **Automatic Blockchain Indexer** - Background sync keeps cache fresh
@@ -26,8 +31,7 @@ This is a **work-in-progress MVP** for internal Parity usage. Core marketplace f
 - **Wallet Authentication** - WalletConnect, MetaMask, Talisman, Nova wallet support
 - **Google/Github OAuth** - Social login with non-custodial wallet generation
 - **Polkadot Identity** - Display onchain identities for connected wallets
-- **Client-Side Direct Mode** - React can query blockchain without server
-- **Purchase History from Blockchain** - Read payment transactions from AssetHub
+- **Wallet Transactions** - Write to blockchain from frontend (register products, etc.)
 
 ### ❌ Not in V1 Scope (PRD Limitations)
 - Physical goods delivery / anonymous logistics
@@ -41,18 +45,24 @@ This is a **work-in-progress MVP** for internal Parity usage. Core marketplace f
 
 ## 🎯 Quick Start
 
-### Development
+### First-Time Setup
 
 ```bash
-# Install dependencies
+# 1. Install dependencies
 npm install
 
-# Start development servers (frontend + backend)
+# 2. Configure blockchain environment
+cp .env.example .env
+# Edit .env with your blockchain config (see SETUP_GUIDE.md)
+
+# 3. Start development servers
 npm run dev
 ```
 
 - **Frontend**: http://localhost:3001 (React app)
 - **Backend**: http://localhost:3000 (API server)
+
+**📖 Full setup instructions:** See `SETUP_GUIDE.md` for complete blockchain configuration
 
 ### Production Build
 
@@ -88,6 +98,8 @@ The app uses a **Web3-native architecture** where blockchain is the source of tr
 ```
 
 **Key Services:**
+- `BlockchainService` (Frontend) - Direct blockchain queries from browser
+- `BlockchainCacheService` (Frontend) - IndexedDB caching for performance
 - `ProductService` - Blockchain-first queries with cache fallback
 - `BlockchainSyncService` - Auto-syncs on-chain data to cache
 - `ProductRegistryService` - Smart contract interface
@@ -195,9 +207,23 @@ See `IMPLEMENTATION_ROADMAP.md` for the complete 16-week implementation plan cov
 ## 🔧 Environment Variables
 
 ```bash
-# Blockchain
+# Network Selection (choose one)
+# Kusama: Moonriver (recommended for production)
+EVM_RPC_URL=https://rpc.api.moonriver.moonbeam.network
+DEPLOYMENT_NETWORK=moonriver
+
+# Polkadot: Paseo testnet
+# EVM_RPC_URL=https://rpc.paseo.io
+# DEPLOYMENT_NETWORK=paseo
+
+# Development: Moonbase Alpha
+# EVM_RPC_URL=https://rpc.api.moonbase.moonbeam.network
+# DEPLOYMENT_NETWORK=moonbase
+
+# Smart Contract
 PRODUCT_REGISTRY_CONTRACT_ADDRESS=0x...    # ProductRegistry smart contract
-EVM_RPC_URL=https://...                   # Blockchain RPC endpoint
+
+# Asset Hub (for Hollar payments)
 ASSETHUB_WSS_URL=wss://polkadot-asset-hub-rpc.polkadot.io
 HOLLAR_ASSET_ID=1984
 
@@ -225,11 +251,22 @@ NODE_ENV=development
 ## 📝 Available Scripts
 
 ```bash
-npm run dev          # Start development servers
-npm run build        # Build both frontend and backend
-npm start           # Start production server
-npm run lint        # Run ESLint
-npm test            # Run all tests
+# Development
+npm run dev                      # Start development servers
+npm run build                    # Build both frontend and backend
+npm start                        # Start production server
+npm run lint                     # Run ESLint
+npm test                         # Run all tests
+
+# Smart Contract Deployment
+npm run contract:compile         # Compile Solidity contracts
+npm run contract:deploy          # Deploy to Moonriver (Kusama)
+npm run contract:deploy:paseo    # Deploy to Paseo testnet (Polkadot)
+npm run contract:deploy:moonbase # Deploy to Moonbase Alpha (dev)
+
+# IPFS & Product Registration
+npm run upload-ipfs-metadata     # Upload product metadata to IPFS
+npm run register-products-real-ipfs # Register products with real IPFS hashes
 ```
 
 ## 🤝 Contributing
@@ -238,9 +275,24 @@ This is an internal Parity project for V1 MVP. See `CLEANUP_PLAN.md` for the det
 
 ## 📄 Project Documents
 
-- `WEB3_ARCHITECTURE.md` - **Blockchain-first architecture documentation**
-- `CLEANUP_PLAN.md` - Detailed cleanup plan and gap analysis
+### 🚀 Deployment Guides
+- `KUSAMA_DEPLOYMENT.md` - **🌟 Kusama & Polkadot EVM deployment (RECOMMENDED)**
+- `DEPLOY_CHECKLIST.md` - **⚡ 15-minute deployment checklist**
+- `DEPLOY_WITH_IPFS.md` - Complete IPFS & Bulletin Chain deployment
+- `DEPLOYMENT_GUIDE.md` - Smart contract deployment guide
+- `DEPLOY_NOW.md` - Quick start (5 commands)
+
+### 📚 Architecture & Setup
+- `WEB3_ARCHITECTURE.md` - Blockchain-first architecture documentation
+- `WEB3_FEATURES_SUMMARY.md` - **🌟 Latest Web3 features (NEW)**
+- `DIRECT_MODE_GUIDE.md` - **🔗 Direct blockchain queries guide**
+- `SETUP_GUIDE.md` - Complete blockchain configuration guide
+- `QUICK_REFERENCE.md` - Commands, endpoints, troubleshooting
+- `.env.example` - Environment configuration template
+
+### 📋 Planning
 - `IMPLEMENTATION_ROADMAP.md` - 16-week implementation roadmap
+- `CLEANUP_PLAN.md` - Detailed cleanup plan and gap analysis
 - `tests/README.md` - Testing documentation
 - PRD (see project documentation) - Product requirements
 

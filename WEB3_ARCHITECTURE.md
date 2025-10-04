@@ -116,21 +116,40 @@ Triggers immediate sync of all products from blockchain to cache.
 }
 ```
 
-## Future: Client-Side Direct Mode
+## ✅ Implemented: Client-Side Direct Mode
 
-The next phase will add a **fully client-side mode** where the React frontend can:
+**Status:** Production Ready (v1.0)
 
-1. Connect directly to ProductRegistry contract via MetaMask/wallet
-2. Read product data without the server
-3. Submit transactions directly
-4. Only use server for digital delivery redemption
+The React frontend now supports **direct blockchain queries** without server dependency:
 
-### Planned Implementation
+1. ✅ Connect to ProductRegistry contract via ethers.js
+2. ✅ Read product data directly from blockchain + IPFS
+3. ✅ Mode toggle - Users choose "cached" (fast) vs "direct" (trustless)
+4. ✅ Auto-initialization - Blockchain connection on app load
 
-1. **Client-side blockchain library** - Extract blockchain logic into shared package
-2. **React hooks** - `useProduct(id)` reads from blockchain
-3. **Mode toggle** - Users choose "cached mode" (fast) vs "direct mode" (fully decentralized)
-4. **Offline capability** - Cache blockchain data in IndexedDB
+### Implementation Details
+
+**Files:**
+- `src/frontend/services/blockchainService.ts` - Blockchain service layer
+- `src/frontend/hooks/useBlockchain.tsx` - React hooks
+- `src/frontend/components/common/QueryModeToggle.tsx` - UI toggle
+
+**React Hooks:**
+```typescript
+useProduct(id)              // Fetch single product
+useProducts(options)        // Fetch product list
+useQueryMode()             // Toggle cached/direct mode
+useBlockchainContext()     // Access blockchain state
+```
+
+**See `DIRECT_MODE_GUIDE.md` for complete documentation.**
+
+### Future Enhancements
+
+1. **IndexedDB caching** - Offline blockchain data
+2. **Wallet transactions** - Write to blockchain from frontend
+3. **IPFS frontend** - Deploy React app to IPFS
+4. **ENS domain** - yourapp.eth
 
 ## Benefits
 
@@ -142,12 +161,12 @@ The next phase will add a **fully client-side mode** where the React frontend ca
 ✅ **Auto-sync** - Background service keeps cache fresh
 ✅ **Transparency** - Users can verify data directly on blockchain
 
-### Future with Direct Mode
+### With Direct Mode (Implemented)
 
-✅ **No server required** - Users interact directly with blockchain
-✅ **Censorship resistant** - Cannot be taken down
-✅ **Trustless** - No need to trust server data
-✅ **Privacy** - No server tracking user requests
+✅ **Optional server** - Users can bypass server for reads
+✅ **Censorship resistant** - Data verifiable on-chain
+✅ **Trustless** - Direct blockchain verification
+✅ **User choice** - Toggle between fast (cached) and trustless (direct)
 
 ## Migration Path
 
@@ -175,11 +194,12 @@ The refactored architecture maintains **full backward compatibility**:
 
 ## Next Steps
 
-1. **Monitor cache hit rates** - Optimize TTL based on usage
-2. **Add blockchain event listeners** - Real-time cache updates
-3. **Build client-side library** - Extract blockchain logic for browser use
-4. **Implement PurchaseService refactor** - Read payments from AssetHub
-5. **Add direct mode toggle** - Let users choose cached vs direct blockchain queries
+1. ✅ **Direct mode implemented** - Users can query blockchain directly
+2. **Monitor cache hit rates** - Optimize TTL based on usage
+3. **Add blockchain event listeners** - Real-time cache updates
+4. **IndexedDB caching** - Offline support for direct mode
+5. **Implement PurchaseService refactor** - Read payments from AssetHub
+6. **Wallet transactions** - Write to blockchain from frontend
 
 ## Testing
 
@@ -197,6 +217,6 @@ To test the blockchain-first flow:
 
 ---
 
-**Architecture Version:** 1.0
-**Date:** 2025-10-03
-**Status:** ✅ Production Ready (with optional blockchain sync)
+**Architecture Version:** 2.0
+**Date:** 2025-10-04
+**Status:** ✅ Production Ready (blockchain-first with direct mode)
